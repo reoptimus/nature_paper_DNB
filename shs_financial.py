@@ -3,7 +3,7 @@ Financial modeling functions for PD, LGD, and price variations
 """
 import numpy as np
 from scipy.stats import norm
-import config
+from . import shs_config as config
 
 
 def pd_to_dd(pd: float) -> float:

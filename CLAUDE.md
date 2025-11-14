@@ -56,6 +56,7 @@ This codebase implements a **nature-based financial risk analysis system** that 
 
 | Task | Command | Module |
 |------|---------|--------|
+| Run as package (recommended) | `import shs_nature_analysis as shs` then `shs.run_pipeline()` | `__init__.py` |
 | Run full pipeline | `python shs_example_usage.py` (Example 1) | `shs_main_pipeline.py` |
 | Run tests | `python shs_test_suite.py` | `shs_test_suite.py` |
 | Quick validation | `python shs_quick_compare.py` | `shs_quick_compare.py` |
@@ -64,6 +65,7 @@ This codebase implements a **nature-based financial risk analysis system** that 
 
 ```
 shs-nature-analysis/
+├── __init__.py                # 📦 Package initialization & exports
 ├── shs_config.py              # ⚙️  Configuration (start here for parameters)
 ├── shs_data_loader.py         # 📊 Data loading and preprocessing
 ├── shs_vulnerability.py       # 🔢 Vulnerability & depreciation calculations
@@ -79,6 +81,19 @@ shs-nature-analysis/
 
 ### Quick Start
 
+**Option 1: As a Package (Recommended)**
+```python
+# Simple usage
+import shs_nature_analysis as shs
+results = shs.run_pipeline()
+
+# Or use the class directly for more control
+from shs_nature_analysis import SHSAnalysisPipeline
+pipeline = SHSAnalysisPipeline()
+results = pipeline.run_full_pipeline(create_plots=True)
+```
+
+**Option 2: Direct Module Import (Legacy)**
 ```python
 from shs_main_pipeline import SHSAnalysisPipeline
 
@@ -91,6 +106,158 @@ results = pipeline.run_full_pipeline(create_plots=True)
 
 ```bash
 pip install pandas numpy scipy matplotlib seaborn joblib openpyxl
+```
+
+---
+
+## Package Usage
+
+### Overview
+
+The codebase is now structured as a proper Python package with an `__init__.py` file that exports all main components. This makes it easy to import and use in other projects or notebooks.
+
+### Important: Directory Naming
+
+**The directory name uses hyphens (`shs-nature-analysis`) but Python module names require underscores (`shs_nature_analysis`).** To use this as a package, you have three options:
+
+1. **Rename the directory** (simplest):
+   ```bash
+   mv shs-nature-analysis shs_nature_analysis
+   ```
+
+2. **Create a symbolic link**:
+   ```bash
+   ln -s shs-nature-analysis shs_nature_analysis
+   ```
+
+3. **Use the directory name directly** but import from the current directory (only works if you're already in the package directory)
+
+### Installation
+
+Once you've resolved the naming issue, you can use the package in two ways:
+
+1. **Add parent directory to Python path** (for development):
+   ```python
+   import sys
+   sys.path.insert(0, '/path/to/parent/of/shs_nature_analysis')
+   import shs_nature_analysis as shs
+   ```
+
+2. **Install as editable package** (recommended):
+   ```bash
+   cd /path/to/shs_nature_analysis
+   pip install -e .
+   ```
+   (Note: This requires a `setup.py` or `pyproject.toml` file - see below)
+
+### Basic Usage
+
+**Simplest approach:**
+```python
+import shs_nature_analysis as shs
+
+# Run the complete pipeline with one function
+results = shs.run_pipeline()
+print(f"Analysis complete! Shape: {results.shape}")
+```
+
+**With options:**
+```python
+import shs_nature_analysis as shs
+
+# Run without generating plots
+results = shs.run_pipeline(create_plots=False)
+```
+
+**Using the pipeline class:**
+```python
+from shs_nature_analysis import SHSAnalysisPipeline
+
+pipeline = SHSAnalysisPipeline()
+results = pipeline.run_full_pipeline(create_plots=True)
+```
+
+**Accessing submodules:**
+```python
+from shs_nature_analysis import config, data_loader, vulnerability, financial, visualization
+
+# Access configuration
+print(f"Risk-free rate: {config.RISK_FREE_RATE}")
+
+# Use specific functions
+instrument_df = data_loader.load_instrument_data()
+```
+
+**Step-by-step execution:**
+```python
+from shs_nature_analysis import SHSAnalysisPipeline
+
+pipeline = SHSAnalysisPipeline()
+
+# Step 1: Load data
+pipeline.load_all_data()
+print(f"Loaded {len(pipeline.instrument_df)} instruments")
+
+# Step 2: Calculate depreciations
+depreciation_df = pipeline.calculate_instrument_depreciations()
+
+# Step 3: Calculate financial impacts
+financial_impacts = pipeline.calculate_financial_impacts(depreciation_df)
+
+# Step 4: Calculate SHS losses
+final_results = pipeline.calculate_shs_losses(financial_impacts)
+```
+
+### Exported Components
+
+The `__init__.py` file exports the following:
+
+- **`run_pipeline()`**: Convenience function to run the complete analysis
+- **`SHSAnalysisPipeline`**: Main pipeline class
+- **`config`**: Configuration module (alias for `shs_config`)
+- **`data_loader`**: Data loading functions (alias for `shs_data_loader`)
+- **`vulnerability`**: Vulnerability calculation functions (alias for `shs_vulnerability`)
+- **`financial`**: Financial modeling functions (alias for `shs_financial`)
+- **`visualization`**: Plotting functions (alias for `shs_visualization`)
+
+### Package Version
+
+```python
+import shs_nature_analysis as shs
+print(shs.__version__)  # Output: 1.0.0
+```
+
+### Creating a setup.py (Optional)
+
+To install the package properly, create a `setup.py` file:
+
+```python
+from setuptools import setup, find_packages
+
+setup(
+    name="shs-nature-analysis",
+    version="1.0.0",
+    packages=find_packages(),
+    install_requires=[
+        "pandas>=1.3.0",
+        "numpy>=1.20.0",
+        "scipy>=1.7.0",
+        "matplotlib>=3.4.0",
+        "seaborn>=0.11.0",
+        "joblib>=1.0.0",
+        "openpyxl>=3.0.0",
+    ],
+    python_requires=">=3.8",
+    author="SHS Nature Analysis Team",
+    description="Nature-based financial risk analysis system",
+    long_description=open("shs_readme.md").read(),
+    long_description_content_type="text/markdown",
+)
+```
+
+Then install with:
+```bash
+pip install -e .
 ```
 
 ---
@@ -485,11 +652,12 @@ python shs_quick_compare.py
 
 ### Task 1: Run Full Analysis
 
+**Using the Package (Recommended):**
 ```python
-from shs_main_pipeline import SHSAnalysisPipeline
+import shs_nature_analysis as shs
 
-pipeline = SHSAnalysisPipeline()
-results = pipeline.run_full_pipeline(create_plots=True)
+# Simplest way - runs with defaults
+results = shs.run_pipeline()
 
 # Output files created:
 # - merged_SHS_instr_vulnxalpha_scenarios_*.csv
@@ -497,16 +665,24 @@ results = pipeline.run_full_pipeline(create_plots=True)
 # - Various heatmap PNGs
 ```
 
+**Using the Class Directly:**
+```python
+from shs_nature_analysis import SHSAnalysisPipeline
+
+pipeline = SHSAnalysisPipeline()
+results = pipeline.run_full_pipeline(create_plots=True)
+```
+
 ### Task 2: Analyze Specific Scenario
 
 ```python
+from shs_nature_analysis import SHSAnalysisPipeline, vulnerability, config
+
 pipeline = SHSAnalysisPipeline()
 pipeline.load_all_data()
 
 # Calculate depreciations for single eco-service
-from shs_vulnerability import calculate_depreciation
-
-dep_df = calculate_depreciation(
+dep_df = vulnerability.calculate_depreciation(
     vuln_df=pipeline.vulnerability_df,
     instrmnt_df=pipeline.instrument_df,
     alpha_df=pipeline.alpha_df,
@@ -522,9 +698,9 @@ dep_df = calculate_depreciation(
 ### Task 3: Custom Visualization
 
 ```python
-from shs_visualization import plot_loss_heatmap_by_dimension
+from shs_nature_analysis import visualization
 
-fig = plot_loss_heatmap_by_dimension(
+fig = visualization.plot_loss_heatmap_by_dimension(
     results_df=results,
     eco_service='Pollination',
     scenario='1_World_shock_10perc_02_GOVonNFC',
