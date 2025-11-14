@@ -5,9 +5,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from main_pipeline import SHSAnalysisPipeline
-import config
-import visualization
+from .shs_main_pipeline import SHSAnalysisPipeline
+from . import shs_config as config
+from . import shs_visualization as visualization
 
 
 def example_1_full_pipeline():
