@@ -15,6 +15,7 @@
 - [Quick Start](#quick-start)
 - [Installation](#installation)
 - [Project Structure](#project-structure)
+- [Data Requirements](#data-requirements)
 - [Usage Guide](#usage-guide)
 - [Configuration](#configuration)
 - [Financial Models](#financial-models)
@@ -198,6 +199,98 @@ Financial Impacts DataFrame
 [Pipeline Aggregation] → Merge with holder data
     ↓
 Final Results CSV + Visualizations
+```
+
+---
+
+## Data Requirements
+
+### Required Data Files
+
+The analysis requires the following data files to be available. File paths are configured in `shs_config.py`.
+
+#### 1. Core Input Files
+
+| File | Description | Format | Expected Location |
+|------|-------------|--------|-------------------|
+| **Instrument Data** | Financial instruments with ISIN, PD, volatility, debt ratio, NACE code | CSV | `INSTRUMENT_FILE` in config |
+| **Vulnerability Scores** | Ecosystem service vulnerability by region, EXIOBASE sector, and NACE code | CSV | `VULN_PATH/VULN_FILE` |
+| **Alpha Shocks** | Ecosystem service shock parameters by area and vulnerability type | Excel (.xlsx) | `VULN_PATH/ALPHA_FILE` |
+| **SHS Holder Data** | Securities holdings statistics linking holders to instruments | CSV | `SHS_HOLDER_FILE` in config |
+
+#### 2. Mapping and Reference Files
+
+| File | Description | Format | Expected Location |
+|------|-------------|--------|-------------------|
+| **EXIOBASE Production Data** | Industry output data (X matrix) for production weighting | CSV | `X_FILE` in config |
+| **NACE Mapping** | Simple NACE code mapping table | Excel (.xlsx) | `DATA_PATH/nace_0d_map.xlsx` |
+| **EXIOBASE to NACE Mapping** | Links EXIOBASE sectors to NACE Level 2 codes | Excel (.xlsx) | `DATA_PATH/EXIOBASE_to_NACElvl2_tab.xlsx` |
+| **Region/Area Mapping** | ISO2 country codes to continent/area mapping | CSV | `./data/regions_ISO2_continent_area.csv` |
+
+#### 3. Data Directory Structure
+
+Create the following directory structure:
+
+```
+shs-nature-analysis/
+├── data/
+│   ├── regions_ISO2_continent_area.csv      # Region mapping (local)
+│   ├── nace_0d_map.xlsx                     # NACE mapping (if using local)
+│   └── EXIOBASE_to_NACElvl2_tab.xlsx        # EXIOBASE mapping (if using local)
+└── [External paths configured in shs_config.py]
+```
+
+#### 4. Expected Data Schemas
+
+**Instrument Data (`INSTRUMENT_FILE`):**
+- Required columns: `ISIN`, `PD`, `vol` (volatility), `debt_ratio`, `nace`, `INSTR_CLASS`, `resid_mat_yr`, `ISSUER_COUNTRY`
+- Data types: `nace` should be string type
+
+**Vulnerability Data (`VULN_FILE`):**
+- Required columns: `region`, `eco_serv`, `EXIOBASE`, `indout`, `NACE Code`, `Adj_ind`
+- Additional columns: Various vulnerability type columns (e.g., `DS_total_SR`, `Vuln_total_SR`)
+
+**Alpha Data (`ALPHA_FILE`):**
+- Required columns: `Area`, `eco_serv`
+- Additional columns: Various vulnerability type columns matching those in vulnerability data
+
+**SHS Holder Data (`SHS_HOLDER_FILE`):**
+- Required columns: `ISIN`, `HOLDER_SECTOR`, `HOLDER_AREA`, `VALUE`
+
+**Region Mapping (`regions_ISO2_continent_area.csv`):**
+- Required columns: `area`, `region` (ISO2 country code)
+
+#### 5. Configuration
+
+Before running the analysis, update file paths in `shs_config.py`:
+
+```python
+# Example configuration (shs_config.py)
+BASE_PATH = Path('/path/to/your/data/root')
+DATA_PATH = BASE_PATH / 'git_repo/Ecosystem_ds/data'
+VULN_PATH = BASE_PATH / 'DS_Vuln_update/Vuln_final_store'
+
+INSTRUMENT_FILE = '/path/to/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
+VULN_FILE = 'Vuln_final_03_11_2025.csv'
+ALPHA_FILE = 'Alpha_final_03_11_2025.xlsx'
+SHS_HOLDER_FILE = '/path/to/F_511_31_32_hldr_instrmnt_2024-Q4_prepped.csv'
+```
+
+#### 6. Data Validation
+
+To verify your data files are correctly loaded:
+
+```python
+from shs_nature_analysis import SHSAnalysisPipeline
+
+pipeline = SHSAnalysisPipeline()
+pipeline.load_all_data()
+
+# Check what was loaded
+print(f"Instruments: {len(pipeline.instrument_df)} rows")
+print(f"Vulnerabilities: {len(pipeline.vulnerability_df)} rows")
+print(f"Alpha shocks: {len(pipeline.alpha_df)} rows")
+print(f"Holders: {len(pipeline.holder_df)} rows")
 ```
 
 ---
