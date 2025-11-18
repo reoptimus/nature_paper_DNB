@@ -45,13 +45,19 @@ dep_df = vulnerability.calculate_depreciation(...)
 
 ### 3. **Validate All Changes**
 
-**ALWAYS** run the test suite after making changes:
+**ALWAYS** run tests after making changes:
 
 ```bash
+# Quick test first (fast validation)
+python -c "import nature_analysis; nature_analysis.run_quick_test(n_instruments=10)"
+
+# Full test suite (comprehensive validation)
 python tests/test_suite.py
 ```
 
 The test suite compares outputs against validated reference data. If tests fail, investigate why before proceeding.
+
+**Pro tip:** Use `run_quick_test()` during development for fast iteration, then run the full test suite before finalizing changes.
 
 ### 4. **Preserve Financial Accuracy**
 
@@ -498,6 +504,12 @@ Ask the user for clarification when:
 ## Useful Commands
 
 ```bash
+# Quick test (fast - use this first!)
+python -c "import nature_analysis; nature_analysis.run_quick_test(n_instruments=10)"
+
+# Run quick test examples
+python examples/quick_test.py
+
 # Run full test suite
 python tests/test_suite.py
 

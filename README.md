@@ -97,6 +97,28 @@ pip install -r requirements.txt
 
 ## 🚀 Quick Start
 
+### Example 0: Quick Test (Fast & Lightweight) ⚡
+
+**Perfect for testing, demos, or first-time users!**
+
+```python
+import nature_analysis
+
+# Run quick test with only 100 instruments, 1 scenario, 1 ecosystem service
+results = nature_analysis.run_quick_test(n_instruments=100)
+
+print(f"Quick test complete! Processed {len(results)} instruments")
+print(f"Depreciation column: {results.columns[-1]}")
+```
+
+**Output:**
+```
+Quick test complete! Processed 100 instruments
+Depreciation column: Depr_1_World_shock_10perc_02_GOVonNFC_Soil and sediment retention
+```
+
+**⏱️ Speed:** ~10-30 seconds (vs. 10-30 minutes for full pipeline)
+
 ### Example 1: One-Line Execution
 
 ```python
@@ -119,7 +141,20 @@ Total value loss: €45,678,912
 Loss rate: 0.87%
 ```
 
-### Example 2: Using the Pipeline Class
+### Example 2: Quick Test with Custom Size
+
+```python
+import nature_analysis
+
+# Test with even fewer instruments for ultra-fast testing
+results = nature_analysis.run_quick_test(n_instruments=50)
+
+print(f"Processed {len(results)} instruments")
+print(f"\nFirst 5 rows:")
+print(results.head())
+```
+
+### Example 3: Using the Pipeline Class
 
 ```python
 from nature_analysis import AnalysisPipeline
@@ -136,7 +171,7 @@ print(f"Analyzed {len(pipeline.eco_services)} ecosystem services")
 print(f"Ran {len(pipeline.scenarios)} scenarios")
 ```
 
-### Example 3: Step-by-Step Analysis
+### Example 4: Step-by-Step Analysis
 
 ```python
 from nature_analysis import AnalysisPipeline
@@ -190,6 +225,7 @@ nature_paper_DNB/
 │
 ├── examples/                   # Usage examples
 │   ├── __init__.py
+│   ├── quick_test.py          # Fast testing examples ⚡
 │   ├── basic_usage.py         # Simple examples
 │   └── advanced_usage.py      # Advanced scenarios
 │
@@ -339,6 +375,73 @@ print(sensitivity_df)
 
 ---
 
+## ⚡ Performance: Quick Test vs Full Pipeline
+
+### When to Use Quick Test
+
+The `run_quick_test()` function is ideal for:
+
+- **✓ Testing installation** - Verify everything works without waiting
+- **✓ Development & debugging** - Quickly test changes
+- **✓ Demos & presentations** - Show the workflow in real-time
+- **✓ Learning the package** - Understand outputs without long waits
+- **✓ Parameter exploration** - Test different configurations rapidly
+
+### When to Use Full Pipeline
+
+The `run_pipeline()` function should be used for:
+
+- **✓ Production analysis** - Complete portfolio risk assessment
+- **✓ Final results** - All instruments, scenarios, and ecosystem services
+- **✓ Reporting** - Comprehensive output with visualizations
+- **✓ Research** - Full dataset analysis for papers/reports
+
+### Performance Comparison
+
+| Aspect | Quick Test | Full Pipeline |
+|--------|-----------|---------------|
+| **Instruments** | 100 (customizable) | ~50,000 |
+| **Scenarios** | 1 (first) | All (~10-20) |
+| **Ecosystem Services** | 1 (first) | All (6) |
+| **Runtime** | ~10-30 seconds | ~10-30 minutes |
+| **Output** | Depreciation matrix | Complete portfolio losses |
+| **Use Case** | Testing, demos | Production analysis |
+
+### Example Usage Comparison
+
+**Quick Test:**
+```python
+import nature_analysis
+
+# Fast: Only 100 instruments, 1 scenario, 1 ES
+results = nature_analysis.run_quick_test(n_instruments=100)
+# Runtime: ~20 seconds
+```
+
+**Full Pipeline:**
+```python
+import nature_analysis
+
+# Complete: All instruments, all scenarios, all ES
+results = nature_analysis.run_pipeline()
+# Runtime: ~15-30 minutes
+```
+
+### Running the Quick Test Example
+
+```bash
+# Run the comprehensive quick test examples
+python examples/quick_test.py
+```
+
+This will demonstrate:
+- Basic quick test with defaults
+- Custom size quick test
+- Using the pipeline class directly
+- Performance comparison estimates
+
+---
+
 ## ⚙️ Configuration
 
 ### Key Parameters
@@ -460,14 +563,41 @@ pipeline = AnalysisPipeline()
 
 **Methods:**
 - `load_all_data()` - Load all required input files
-- `calculate_instrument_depreciations()` - Calculate depreciation matrix
+- `calculate_instrument_depreciations()` - Calculate depreciation matrix (all scenarios/ES)
+- `calculate_instrument_depreciations_light(n_instruments=100)` - ⚡ Lightweight depreciation (limited data)
 - `calculate_financial_impacts(depreciation_df)` - Calculate PD, LGD, price changes
 - `calculate_shs_losses(financial_impacts)` - Aggregate portfolio losses
 - `run_full_pipeline(create_plots=True)` - Run complete workflow
+- `run_quick_test(n_instruments=100)` - ⚡ Run quick test with limited data
+
+### Convenience Functions
+
+```python
+import nature_analysis
+
+# Full analysis
+results = nature_analysis.run_pipeline(create_plots=True)
+
+# Quick test (lightweight)
+results = nature_analysis.run_quick_test(n_instruments=100)
+```
+
+**Functions:**
+- `run_pipeline(create_plots=True)` - Run full analysis pipeline
+- `run_quick_test(n_instruments=100)` - ⚡ Run quick test with limited data
 
 ---
 
 ## ✅ Testing
+
+### Quick Installation Test
+
+```bash
+# Run quick test to verify installation (fastest)
+python -c "import nature_analysis; nature_analysis.run_quick_test(n_instruments=10)"
+```
+
+### Comprehensive Testing
 
 ```bash
 # Run full test suite
@@ -478,6 +608,9 @@ python tests/quick_compare.py
 
 # Test import
 python tests/test_import.py
+
+# Run quick test examples
+python examples/quick_test.py
 ```
 
 ---
