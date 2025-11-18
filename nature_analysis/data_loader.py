@@ -9,7 +9,24 @@ from . import config
 
 
 def load_instrument_data(file_path: str = config.INSTRUMENT_FILE) -> pd.DataFrame:
-    """Load instrument data with proper dtype specification."""
+    """Load SHS instrument data with proper dtype specification."""
+    return pd.read_csv(file_path, dtype={'nace': 'str'})
+
+
+def load_anacredit_instrument_data(file_path: str = config.ANACREDIT_INSTRUMENT_FILE) -> pd.DataFrame:
+    """
+    Load AnaCredit instrument data with proper dtype specification.
+
+    AnaCredit data is expected to have the same structure as SHS instrument data,
+    including the same columns (PERIOD, IDENTIFIER, INSTR_CLASS, ISSUER_COUNTRY,
+    ISSUER_SECTOR, pd, vol, debt_ratio, nace, nace_lvl*, resid_mat_yr, etc.).
+
+    Args:
+        file_path: Path to AnaCredit instrument CSV file
+
+    Returns:
+        DataFrame with AnaCredit instrument data
+    """
     return pd.read_csv(file_path, dtype={'nace': 'str'})
 
 
