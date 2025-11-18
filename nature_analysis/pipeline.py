@@ -383,7 +383,10 @@ class AnaCreditAnalysisPipeline:
     def load_all_data(self):
         """Load all required data files for AnaCredit analysis."""
         logger.info("Loading AnaCredit instrument data...")
-        self.instrmnt_df = data_loader.load_anacredit_instrument_data()
+        self.SHS_instrmnt_df = data_loader.load_instrument_data()
+
+        logger.info("Loading AnaCredit instrument data...")
+        self.Anacredit_instrmnt_df = data_loader.load_anacredit_instrument_data()
 
         logger.info("Loading vulnerability data...")
         self.vuln_df = data_loader.load_vulnerability_data()

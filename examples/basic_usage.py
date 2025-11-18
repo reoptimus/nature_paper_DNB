@@ -104,6 +104,9 @@ def example_5_custom_analysis():
 
     pipeline = AnalysisPipeline()
     pipeline.load_all_data()
+    # pipeline.SHS_instrmnt_df
+    #  pipeline.Anacredit_instrmnt_df
+
 
     # Analyze a specific scenario
     eco_service = 'Water flow regulation'
