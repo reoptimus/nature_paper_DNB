@@ -12,7 +12,7 @@ This is a **production-ready financial risk analysis package** for quantifying h
 
 - **Domain**: Financial risk modeling + Ecosystem science
 - **Stakeholder**: Central banks (DNB - Dutch Central Bank)
-- **Data**: Real securities holdings statistics (SHS) data
+- **Data**: Two sources - Securities Holdings Statistics (SHS) and AnaCredit (bank lending)
 - **Output**: Portfolio value losses from nature-based risks
 - **Precision Required**: High - these are real financial calculations
 
@@ -24,24 +24,33 @@ This is a **production-ready financial risk analysis package** for quantifying h
 
 Read `nature_analysis/config.py` first to understand:
 - Financial parameters (PD_CALIB, LGD_CALIB, RISK_FREE_RATE)
-- File paths and data sources
+- File paths and data sources (SHS vs AnaCredit)
 - Analysis settings (AGGREG_TYPE, DEPENDENCY_TYPE)
 - Ecosystem services being analyzed
 
-### 2. **Use the Pipeline Class**
+### 2. **Use the Appropriate Pipeline Class**
 
-Don't call individual functions directly unless there's a specific reason:
+The package supports **two data sources** with dedicated pipeline classes:
 
 ```python
-# ✓ CORRECT: Use the pipeline
-from nature_analysis import AnalysisPipeline
-pipeline = AnalysisPipeline()
+# ✓ CORRECT: Use SHS pipeline for securities holdings data
+from nature_analysis import SHSAnalysisPipeline
+pipeline = SHSAnalysisPipeline()
+results = pipeline.run_full_pipeline()
+
+# ✓ CORRECT: Use AnaCredit pipeline for bank lending data
+from nature_analysis import AnaCreditAnalysisPipeline
+pipeline = AnaCreditAnalysisPipeline()
 results = pipeline.run_full_pipeline()
 
 # ✗ AVOID: Direct function calls (unless debugging)
 from nature_analysis import vulnerability
 dep_df = vulnerability.calculate_depreciation(...)
 ```
+
+**Key Differences:**
+- **SHS Pipeline**: Securities holdings → Portfolio losses by holder sector/geography
+- **AnaCredit Pipeline**: Bank lending → Financial impacts by instrument (no holder aggregation)
 
 ### 3. **Validate All Changes**
 
@@ -73,7 +82,7 @@ The financial models are mathematically precise implementations of academic lite
 ### 5. **Consider Performance**
 
 This package processes large datasets:
-- ~50,000 instruments
+- ~50,000 instruments (SHS) or variable (AnaCredit)
 - Multiple ecosystem services
 - Multiple scenarios
 - Parallel processing is used extensively
@@ -89,12 +98,13 @@ When modifying code, consider:
 
 ### Data Flow
 
+**SHS Pipeline (Securities Holdings):**
 ```
 Input Files (CSV/Excel)
     ↓
-[Data Loader] → Clean, reshape, merge
+[Data Loader] → load_SHS_data(), load_vulnerability_data(), load_alpha_data()
     ↓
-Instrument Data + Vulnerability Scores + Alpha Shocks
+SHS Instrument Data + Vulnerability Scores + Alpha Shocks + Holder Data
     ↓
 [Vulnerability Calculator] → Parallel processing by (ecosystem service, scenario)
     ↓
@@ -104,35 +114,57 @@ Depreciation Matrix (instruments × scenarios)
     ↓
 Financial Impacts (PD changes, LGD, price variations)
     ↓
-[Pipeline Aggregation] → Merge with holder data
+[SHS Pipeline Aggregation] → Merge with holder data
     ↓
 Final Results CSV (by holder, sector, geography, ecosystem service)
+```
+
+**AnaCredit Pipeline (Bank Lending):**
+```
+Input Files (CSV/Excel)
+    ↓
+[Data Loader] → load_Anacredit_data(), load_vulnerability_data(), load_alpha_data()
+    ↓
+AnaCredit Instrument Data + Vulnerability Scores + Alpha Shocks
+    ↓
+[Vulnerability Calculator] → Parallel processing by (ecosystem service, scenario)
+    ↓
+Depreciation Matrix (instruments × scenarios)
+    ↓
+[Financial Models] → Apply Merton framework
+    ↓
+Financial Impacts CSV (by instrument, ecosystem service, scenario)
 ```
 
 ### Module Responsibilities
 
 | Module | Primary Purpose | Key Outputs |
 |--------|----------------|-------------|
-| `config.py` | Centralized parameters | Constants, paths, settings |
-| `data_loader.py` | Load and preprocess data | DataFrames (instruments, vulnerability, alpha, holders) |
+| `config.py` | Centralized parameters | Constants, paths (SHS & AnaCredit), settings |
+| `data_loader.py` | Load and preprocess data | DataFrames (SHS/AnaCredit instruments, vulnerability, alpha, holders) |
 | `vulnerability.py` | Calculate depreciations | Depreciation matrix (instruments × scenarios) |
 | `financial.py` | Financial modeling | PD, LGD, bond prices, equity prices |
-| `pipeline.py` | Orchestration | Complete workflow execution |
+| `pipeline.py` | Orchestration | Two pipeline classes (SHSAnalysisPipeline, AnaCreditAnalysisPipeline) |
 | `visualization.py` | Plotting | Heatmaps, charts |
 
 ### Key Functions Reference
 
 #### Data Loading (`data_loader.py`)
-- `load_instrument_data()` - Load financial instruments with risk metrics
+- `load_SHS_data()` - Load SHS financial instruments with risk metrics
+- `load_Anacredit_data()` - Load AnaCredit (bank lending) instruments with risk metrics
 - `load_vulnerability_data()` - Load ecosystem vulnerability scores
 - `load_alpha_data()` - Load shock parameters
-- `load_shs_holder_data()` - Load securities holdings
+- `load_shs_holder_data()` - Load securities holdings (SHS only)
 - `prepare_vulnerability_with_alpha()` - Merge vulnerability and shock data
 
 #### Vulnerability Calculations (`vulnerability.py`)
-- `calculate_depreciation()` - Main depreciation calculation for one scenario
+- `calculate_depreciation()` - Main depreciation calculation for one scenario (SHS)
+- `calculate_anacredit_depreciation()` - Depreciation calculation for AnaCredit (wrapper)
 - `compute_weighted_metric()` - Production-weighted averaging across sectors
-- `calculate_instrument_depreciations_parallel()` - Parallel processing wrapper
+- `calculate_all_depreciations()` - Parallel processing wrapper for all scenarios (SHS)
+- `calculate_all_anacredit_depreciations()` - Parallel processing wrapper for AnaCredit
+
+**Note:** Despite having separate functions, the underlying calculation logic is identical.
 
 #### Financial Models (`financial.py`)
 - `pd_to_dd()` - Convert probability of default to distance to default
@@ -144,12 +176,19 @@ Final Results CSV (by holder, sector, geography, ecosystem service)
 - `calculate_equity_price_variation()` - Equity price change (Merton model)
 
 #### Pipeline (`pipeline.py`)
-- `AnalysisPipeline` class - Main orchestration
-  - `load_all_data()` - Load all required files
+- `SHSAnalysisPipeline` class - Main orchestration for SHS data
+  - `load_all_data()` - Load all required files (SHS instruments, vulnerability, alpha, NACE, holders)
   - `calculate_instrument_depreciations()` - Calculate depreciation matrix
   - `calculate_financial_impacts()` - Apply Merton model
-  - `calculate_shs_losses()` - Aggregate portfolio losses
-  - `run_full_pipeline()` - Execute complete workflow
+  - `calculate_shs_losses()` - Aggregate portfolio losses by holder
+  - `run_full_pipeline()` - Execute complete SHS workflow
+  - `run_quick_test()` - Fast test with limited data
+
+- `AnaCreditAnalysisPipeline` class - Main orchestration for AnaCredit data
+  - `load_all_data()` - Load all required files (AnaCredit instruments, vulnerability, alpha, NACE)
+  - `calculate_instrument_depreciations()` - Calculate depreciation matrix
+  - `calculate_financial_impacts()` - Apply Merton model
+  - `run_full_pipeline()` - Execute complete AnaCredit workflow
 
 ---
 
@@ -185,10 +224,48 @@ Final Results CSV (by holder, sector, geography, ecosystem service)
 ### Task: Modify Data Loading
 
 1. **Identify the loader function** in `data_loader.py`
+   - For SHS: `load_SHS_data()`
+   - For AnaCredit: `load_Anacredit_data()`
+   - For shared data: `load_vulnerability_data()`, `load_alpha_data()`, etc.
+
 2. **Understand current data structure** - read the function first
 3. **Make minimal changes** - preserve existing columns unless necessary
-4. **Test downstream effects** - check if pipeline still works
+4. **Test downstream effects** - check if both pipelines still work
 5. **Update data requirements** in README.md if schema changes
+
+### Task: Add Support for a New Data Source
+
+If you need to add a third data source (e.g., "NewSource"):
+
+1. **Add file path** to `config.py`:
+   ```python
+   NEWSOURCE_INSTRUMENT_FILE = '/path/to/newsource_data.csv'
+   ```
+
+2. **Add loader function** to `data_loader.py`:
+   ```python
+   def load_NewSource_data(file_path=config.NEWSOURCE_INSTRUMENT_FILE):
+       return pd.read_csv(file_path, dtype={'nace': 'str'})
+   ```
+
+3. **Add wrapper functions** to `vulnerability.py`:
+   ```python
+   def calculate_newsource_depreciation(*args, **kwargs):
+       return calculate_depreciation(*args, **kwargs)
+   ```
+
+4. **Create pipeline class** in `pipeline.py`:
+   ```python
+   class NewSourceAnalysisPipeline:
+       # Similar structure to SHSAnalysisPipeline or AnaCreditAnalysisPipeline
+   ```
+
+5. **Export in __init__.py**:
+   ```python
+   from .pipeline import NewSourceAnalysisPipeline
+   ```
+
+6. **Document** in README.md
 
 ### Task: Change Financial Model
 
@@ -223,12 +300,20 @@ Final Results CSV (by holder, sector, geography, ecosystem service)
 ### Task: Debug a Data Issue
 
 1. **Check logs** - the code uses logging extensively
+
 2. **Inspect intermediate DataFrames**:
    ```python
-   pipeline = AnalysisPipeline()
-   pipeline.load_all_data()
-   print(pipeline.instrument_df.head())
-   print(pipeline.instrument_df.info())
+   # For SHS
+   shs_pipeline = SHSAnalysisPipeline()
+   shs_pipeline.load_all_data()
+   print(shs_pipeline.instrmnt_df.head())
+   print(shs_pipeline.instrmnt_df.info())
+
+   # For AnaCredit
+   anacredit_pipeline = AnaCreditAnalysisPipeline()
+   anacredit_pipeline.load_all_data()
+   print(anacredit_pipeline.instrmnt_df.head())
+   print(anacredit_pipeline.instrmnt_df.info())
    ```
 
 3. **Common issues**:
@@ -236,6 +321,7 @@ Final Results CSV (by holder, sector, geography, ecosystem service)
    - Missing countries in alpha data → Check area mapping
    - NaN values → Check merge keys and data completeness
    - Performance issues → Check data volumes and parallelization
+   - Wrong data source → Verify using correct pipeline (SHS vs AnaCredit)
 
 4. **Validation checks**:
    ```python
@@ -286,6 +372,7 @@ Final Results CSV (by holder, sector, geography, ecosystem service)
 - Change PD_CALIB, LGD_CALIB, or RISK_FREE_RATE arbitrarily
 - Modify AGGREG_TYPE without understanding implications
 - Change ECO_SERVICES list without verifying data availability
+- Mix up SHS_INSTRUMENT_FILE and ANACREDIT_INSTRUMENT_FILE paths
 
 **WHY:** These parameters are calibrated for specific analysis requirements.
 
@@ -293,6 +380,7 @@ Final Results CSV (by holder, sector, geography, ecosystem service)
 - Ask about the purpose of the parameter
 - Run sensitivity analysis to understand impact
 - Document why you're changing it
+- Verify you're using the correct data source for each pipeline
 
 ### ❌ Skipping Tests
 
@@ -322,6 +410,22 @@ Final Results CSV (by holder, sector, geography, ecosystem service)
 - Optimize hot paths only
 - Preserve code clarity
 - Measure before/after performance
+
+### ❌ Confusing SHS and AnaCredit Pipelines
+
+**DON'T:**
+- Use `load_SHS_data()` for AnaCredit analysis or vice versa
+- Expect holder aggregation in AnaCredit results
+- Assume outputs are identical between pipelines
+
+**WHY:** They serve different use cases with different data structures.
+
+**DO:**
+- Verify which data source you're working with
+- Use the appropriate pipeline class
+- Understand the output differences:
+  - SHS: Portfolio losses by holder
+  - AnaCredit: Financial impacts by instrument
 
 ---
 
@@ -356,6 +460,78 @@ Final Results CSV (by holder, sector, geography, ecosystem service)
 - **Key insight**: Equity is a call option on firm assets
 - **Default occurs**: When asset value falls below debt at maturity
 - **Applications**: Credit risk modeling, equity valuation
+
+---
+
+## Data Sources: SHS vs AnaCredit
+
+### Securities Holdings Statistics (SHS)
+
+**What it is:**
+- Financial instruments held by institutional investors
+- Bonds, equities, and other securities
+- Includes holder information (who owns what)
+
+**Pipeline:**
+- Class: `SHSAnalysisPipeline`
+- Loader: `load_SHS_data()`
+- Holder data: `load_shs_holder_data()`
+
+**Output:**
+- Portfolio losses aggregated by:
+  - Holder sector (e.g., Financial Corps, Government)
+  - Holder geography (e.g., NL, DE, FR)
+  - Ecosystem service
+  - Scenario
+
+**Use case:**
+- Assessing nature-related financial risks for pension funds, insurance companies, investment funds
+
+### AnaCredit (Analytical Credit Datasets)
+
+**What it is:**
+- Bank lending data
+- Loans to non-financial corporations
+- Direct instrument-level data (no holder aggregation)
+
+**Pipeline:**
+- Class: `AnaCreditAnalysisPipeline`
+- Loader: `load_Anacredit_data()`
+- No holder data needed
+
+**Output:**
+- Financial impacts by:
+  - Instrument (ISIN)
+  - Ecosystem service
+  - Scenario
+- Includes: PD changes, LGD, price variations
+
+**Use case:**
+- Assessing nature-related credit risks in bank loan portfolios
+
+### Key Differences
+
+| Aspect | SHS | AnaCredit |
+|--------|-----|-----------|
+| **Data type** | Securities holdings | Bank lending |
+| **Instruments** | Bonds, equities | Loans |
+| **Holder data** | ✅ Required | ❌ Not applicable |
+| **Final aggregation** | By holder sector/geography | By instrument only |
+| **Pipeline class** | `SHSAnalysisPipeline` | `AnaCreditAnalysisPipeline` |
+| **Config path** | `SHS_INSTRUMENT_FILE` | `ANACREDIT_INSTRUMENT_FILE` |
+| **Loader function** | `load_SHS_data()` | `load_Anacredit_data()` |
+| **Depreciation function** | `calculate_depreciation()` | `calculate_anacredit_depreciation()` |
+| **Batch processing** | `calculate_all_depreciations()` | `calculate_all_anacredit_depreciations()` |
+
+### Shared Components
+
+Both pipelines use the same:
+- Vulnerability data (`load_vulnerability_data()`)
+- Alpha shock data (`load_alpha_data()`)
+- NACE mapping (`load_nace_mapping()`)
+- Production data (`load_production_data()`)
+- Financial models (Merton framework)
+- **Core calculation logic** (identical depreciation formulas)
 
 ---
 
@@ -465,12 +641,19 @@ def test_pd_to_dd():
 ### Integration Tests
 Test complete workflows:
 ```python
-def test_full_pipeline():
-    """Test complete analysis pipeline."""
-    pipeline = AnalysisPipeline()
+def test_shs_pipeline():
+    """Test complete SHS analysis pipeline."""
+    pipeline = SHSAnalysisPipeline()
     results = pipeline.run_full_pipeline(create_plots=False)
     assert len(results) > 0
     assert 'VALUE_LOSS' in results.columns
+
+def test_anacredit_pipeline():
+    """Test complete AnaCredit analysis pipeline."""
+    pipeline = AnaCreditAnalysisPipeline()
+    results = pipeline.run_full_pipeline()
+    assert len(results) > 0
+    assert 'ISIN' in results.columns
 ```
 
 ### Validation Tests
@@ -479,6 +662,7 @@ Compare against reference outputs:
 def test_output_matches_reference():
     """Compare outputs with known-good reference."""
     reference_df = pd.read_csv('reference_output.csv')
+    pipeline = SHSAnalysisPipeline()
     new_df = pipeline.run_full_pipeline()
     assert np.allclose(reference_df['VALUE_LOSS'],
                       new_df['VALUE_LOSS'],
@@ -498,6 +682,8 @@ Ask the user for clarification when:
 5. **Performance trade-offs** - Speed vs. clarity decisions
 6. **Ecosystem service definitions** - Domain-specific terminology
 7. **Aggregation methods** - 'SR' vs 'max' have specific implications
+8. **Data source selection** - When unclear whether to use SHS or AnaCredit
+9. **New data source addition** - Architecture decisions needed
 
 ---
 
@@ -507,8 +693,17 @@ Ask the user for clarification when:
 # Quick test (fast - use this first!)
 python -c "import nature_analysis; nature_analysis.run_quick_test(n_instruments=10)"
 
+# Quick test for AnaCredit
+python -c "import nature_analysis; nature_analysis.run_anacredit_quick_test(n_instruments=10)"
+
 # Run quick test examples
 python examples/quick_test.py
+
+# Run SHS examples
+python examples/basic_usage.py
+
+# Run AnaCredit examples
+python examples/anacredit_usage.py
 
 # Run full test suite
 python tests/test_suite.py
@@ -519,14 +714,15 @@ python tests/quick_compare.py
 # Test imports
 python tests/test_import.py
 
-# Run basic example
-python examples/basic_usage.py
-
 # Check package structure
 python -c "import nature_analysis; print(dir(nature_analysis))"
 
-# Profile performance
+# Profile performance (SHS)
 python -m cProfile -o profile.stats examples/basic_usage.py
+python -c "import pstats; p = pstats.Stats('profile.stats'); p.sort_stats('cumtime'); p.print_stats(20)"
+
+# Profile performance (AnaCredit)
+python -m cProfile -o profile.stats examples/anacredit_usage.py
 python -c "import pstats; p = pstats.Stats('profile.stats'); p.sort_stats('cumtime'); p.print_stats(20)"
 ```
 
@@ -534,15 +730,16 @@ python -c "import pstats; p = pstats.Stats('profile.stats'); p.sort_stats('cumti
 
 ## Summary: Your Workflow
 
-1. **Understand the request** - What's the goal?
+1. **Understand the request** - What's the goal? Which data source (SHS or AnaCredit)?
 2. **Read relevant code** - Don't modify blindly
-3. **Check configuration** - What parameters are set?
-4. **Make minimal changes** - Preserve existing functionality
-5. **Add logging** - Help future debugging
-6. **Write tests** - Validate your changes
-7. **Run test suite** - Check for regressions
-8. **Document changes** - Update README.md if needed
-9. **Explain your changes** - Help the user understand what you did
+3. **Check configuration** - What parameters are set? Which paths are used?
+4. **Choose the right pipeline** - SHSAnalysisPipeline or AnaCreditAnalysisPipeline?
+5. **Make minimal changes** - Preserve existing functionality
+6. **Add logging** - Help future debugging
+7. **Write tests** - Validate your changes for both pipelines if applicable
+8. **Run test suite** - Check for regressions
+9. **Document changes** - Update README.md if needed
+10. **Explain your changes** - Help the user understand what you did
 
 ---
 
@@ -553,6 +750,7 @@ If you encounter:
 - **Domain-specific questions** about ecosystem services → Ask user
 - **Data availability issues** → Check with user about data sources
 - **Conflicting requirements** → Ask user to prioritize
+- **Uncertainty about SHS vs AnaCredit** → Ask user which analysis they need
 
 ---
 
