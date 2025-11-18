@@ -213,7 +213,7 @@ class SHSAnalysisPipeline:
         ).sum()
         
         # Save results
-        output_file = Path('./shs_2024-Q4_results.csv')
+        output_file = config.RESULTS_PATH / 'shs_2024-Q4_results.csv'
         shs_results.to_csv(output_file, index=False)
         logger.info(f"Saved SHS results to {output_file}")
         
