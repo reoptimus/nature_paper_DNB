@@ -67,8 +67,8 @@ This system quantifies how disruptions to **ecosystem services** (e.g., water re
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/shs-nature-analysis.git
-cd shs-nature-analysis
+git clone https://github.com/reoptimus/nature_paper_DNB.git
+cd nature_paper_DNB
 
 # Install in editable mode (recommended for development)
 pip install -e .
@@ -166,11 +166,12 @@ print(f"✓ Final results: {results.shape}")
 ## 📁 Project Structure
 
 ```
-shs-nature-analysis/
+nature_paper_DNB/
 ├── README.md                   # This file
 ├── setup.py                    # Package installation script
 ├── requirements.txt            # Dependencies
 ├── .gitignore                  # Git ignore rules
+├── CLAUDE.md                   # Guide for AI assistants
 │
 ├── nature_analysis/            # Main package ⭐
 │   ├── __init__.py            # Package initialization & exports
