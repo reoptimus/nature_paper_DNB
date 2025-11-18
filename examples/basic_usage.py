@@ -103,10 +103,14 @@ def example_5_custom_analysis():
     )
 
     from nature_analysis.pipeline import SHSAnalysisPipeline
-    pipeline = SHSAnalysisPipeline()
-    pipeline.load_all_data()
-    # pipeline.SHS_instrmnt_df
-    #  pipeline.Anacredit_instrmnt_df
+    pipeline_SHS = SHSAnalysisPipeline()
+    pipeline_SHS.load_all_data()
+    pipeline_SHS.instrmnt_df
+
+    from nature_analysis.pipeline import AnaCreditAnalysisPipeline
+    pipeline_anacredit = AnaCreditAnalysisPipeline()
+    pipeline_anacredit.load_all_data()
+    pipeline_anacredit.instrmnt_df
 
 
     # Analyze a specific scenario

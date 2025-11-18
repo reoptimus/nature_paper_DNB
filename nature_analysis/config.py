@@ -14,7 +14,7 @@ RESULTS_PATH = Path('./results')
 # SHS instrument data
 SHS_INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/SHS/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
 # AnaCredit instrument data
-ANACREDIT_INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/anacredit_NL/anacredit_instrmnt_nature_prepped.csv'
+ANACREDIT_INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/anacredit_NL/anacredit_df_2024-12-31.csv'
 VULN_FILE = 'Vuln_final_03_11_2025.csv'
 ALPHA_FILE = 'Alpha_final_03_11_2025.xlsx'
 X_FILE = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi/x.csv'
