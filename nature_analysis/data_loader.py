@@ -56,7 +56,13 @@ def load_alpha_data(file_path: Path = None,
             'Alpha': 'alpha'
         })
     )
-    
+
+    # modification of field Vuln_type with creation of one column for option (SR or max)
+    # Extract option (the part before _alpha)
+    alpha_df['option'] = alpha_df['Vuln_type'].str.extract(r'_([^_]+)_alpha$')
+    # Remove the "_option_alpha" part from the original string
+    alpha_df['Vuln_type'] = alpha_df['Vuln_type'].str.replace(r'_[^_]+_alpha$', '', regex=True)
+
     return alpha_df
 
 
