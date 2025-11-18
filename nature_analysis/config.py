@@ -10,11 +10,11 @@ VULN_PATH = BASE_PATH / 'DS_Vuln_update/Vuln_final_store'
 ANALYSIS_PATH = BASE_PATH / 'analysis/output_data'
 RESULTS_PATH = Path('./results')
 
-# Input files
+# Input files in secured environment
 # SHS instrument data
-INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
+INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/SHS/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
 # AnaCredit instrument data
-ANACREDIT_INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/anacredit_instrmnt_nature_prepped.csv'
+ANACREDIT_INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/anacredit_NL/anacredit_instrmnt_nature_prepped.csv'
 VULN_FILE = 'Vuln_final_03_11_2025.csv'
 ALPHA_FILE = 'Alpha_final_03_11_2025.xlsx'
 X_FILE = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi/x.csv'
