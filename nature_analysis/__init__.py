@@ -70,10 +70,43 @@ def run_pipeline(create_plots=True, **kwargs):
     return pipeline.run_full_pipeline(create_plots=create_plots)
 
 
+def run_quick_test(n_instruments=100):
+    """
+    Run a quick test of the pipeline with limited data.
+
+    This is a lightweight version designed for fast testing and demonstration.
+    Uses only:
+    - First n_instruments instruments (default: 100)
+    - First scenario
+    - First ecosystem service
+
+    Args:
+        n_instruments (int): Number of instruments to process (default: 100)
+
+    Returns:
+        pd.DataFrame: Depreciation results for the limited scenario
+
+    Example:
+        >>> import nature_analysis
+        >>> results = nature_analysis.run_quick_test(n_instruments=50)
+        >>> print(f"Quick test complete! Processed {len(results)} instruments")
+        >>> print(f"Depreciation range: {results.iloc[:, -1].min():.4f} to {results.iloc[:, -1].max():.4f}")
+
+    Note:
+        This function is much faster than run_pipeline() and is ideal for:
+        - Testing the installation
+        - Demonstrating the workflow
+        - Quick validation during development
+    """
+    pipeline = AnalysisPipeline()
+    return pipeline.run_quick_test(n_instruments=n_instruments)
+
+
 # Define what gets imported with "from nature_analysis import *"
 __all__ = [
     'AnalysisPipeline',
     'run_pipeline',
+    'run_quick_test',
     'config',
     'data_loader',
     'vulnerability',

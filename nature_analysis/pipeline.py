@@ -97,9 +97,62 @@ class SHSAnalysisPipeline:
                       f'merged_SHS_instr_vulnxalpha_scenarios_{config.DEPENDENCY_TYPE}_{config.AGGREG_TYPE}.csv')
         depreciation_df.to_csv(output_file, index=False)
         logger.info(f"Saved depreciation data to {output_file}")
-        
+
         return depreciation_df
-    
+
+    def calculate_instrument_depreciations_light(self, n_instruments: int = 100) -> pd.DataFrame:
+        """
+        Lightweight version: Calculate depreciations for limited instruments and scenarios.
+
+        This method is designed for quick testing and demonstration purposes.
+        It uses only:
+        - First n_instruments instruments (default: 100)
+        - First scenario
+        - First ecosystem service
+
+        Args:
+            n_instruments: Number of instruments to process (default: 100)
+
+        Returns:
+            DataFrame with depreciation column for the limited scenario
+        """
+        logger.info(f"Calculating lightweight depreciations (first {n_instruments} instruments)...")
+
+        # Use configured eco services or all available
+        eco_services = config.ECO_SERVICES if hasattr(config, 'ECO_SERVICES') else self.eco_services
+
+        # Limit to first scenario and first ecosystem service
+        first_scenario = self.scenarios[0]
+        first_eco_service = eco_services[0]
+
+        logger.info(f"Using scenario: {first_scenario}, ecosystem service: {first_eco_service}")
+
+        # Limit instruments to first n_instruments
+        instrmnt_subset = self.instrmnt_df.head(n_instruments).copy()
+
+        # Calculate depreciation for the single scenario/ES combination
+        depreciation_df = vulnerability_calc.calculate_depreciation(
+            self.vuln_df,
+            instrmnt_subset,
+            self.alpha_df,
+            first_eco_service,
+            first_scenario,
+            config.AGGREG_TYPE,
+            self.nace_map,
+            config.DEPENDENCY_TYPE
+        )
+
+        # Combine with instrument metadata
+        final_df = pd.concat([
+            instrmnt_subset[['PERIOD', 'IDENTIFIER', 'INSTR_CLASS',
+                            'ISSUER_COUNTRY', 'nace_lvl1', 'nace_lvl3']],
+            depreciation_df
+        ], axis=1)
+
+        logger.info(f"Lightweight depreciation calculation complete: {final_df.shape}")
+
+        return final_df
+
     def calculate_financial_impacts(self, depreciation_df: pd.DataFrame) -> pd.DataFrame:
         """
         Calculate financial impacts (PD, LGD, price variations) for all scenarios.
@@ -250,9 +303,47 @@ class SHSAnalysisPipeline:
         logger.info("=" * 60)
         logger.info("Pipeline completed successfully!")
         logger.info("=" * 60)
-        
+
         return shs_results
-    
+
+    def run_quick_test(self, n_instruments: int = 100) -> pd.DataFrame:
+        """
+        Run a quick test of the pipeline with limited data.
+
+        This is a lightweight version designed for fast testing and demonstration.
+        Uses only:
+        - First n_instruments instruments (default: 100)
+        - First scenario
+        - First ecosystem service
+
+        Args:
+            n_instruments: Number of instruments to process (default: 100)
+
+        Returns:
+            DataFrame with depreciation results for the limited scenario
+
+        Example:
+            >>> pipeline = AnalysisPipeline()
+            >>> results = pipeline.run_quick_test(n_instruments=50)
+            >>> print(f"Processed {len(results)} instruments")
+        """
+        logger.info("=" * 60)
+        logger.info(f"Starting Quick Test Pipeline (n={n_instruments} instruments)")
+        logger.info("=" * 60)
+
+        # Step 1: Load data
+        self.load_all_data()
+
+        # Step 2: Calculate depreciations (lightweight)
+        depreciation_df = self.calculate_instrument_depreciations_light(n_instruments)
+
+        logger.info("=" * 60)
+        logger.info("Quick test completed successfully!")
+        logger.info(f"Processed {len(depreciation_df)} instruments")
+        logger.info("=" * 60)
+
+        return depreciation_df
+
     def create_visualizations(self, shs_results: pd.DataFrame):
         """Create standard visualization outputs."""
         
