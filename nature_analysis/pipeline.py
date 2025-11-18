@@ -8,11 +8,11 @@ from pathlib import Path
 from itertools import product
 import logging
 
-from . import shs_config as config
-from . import shs_data_loader as data_loader
-from . import shs_vulnerability as vulnerability_calc
-from . import shs_financial as financial_models
-from . import shs_visualization as visualization
+from . import config
+from . import data_loader
+from . import vulnerability as vulnerability_calc
+from . import financial as financial_models
+from . import visualization
 
 # Set up logging
 logging.basicConfig(

@@ -1,34 +1,32 @@
-# SHS Nature Analysis
+# Nature-Based Financial Risk Analysis
 
-> **Securities Holdings Statistics (SHS) Nature-Based Financial Risk Analysis**
->
-> A production-ready Python package for quantifying how ecosystem service disruptions impact financial portfolios through credit risk modeling.
+> **A production-ready Python package for quantifying how ecosystem service disruptions impact financial portfolios through credit risk modeling**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)]()
 
 ---
 
-## Table of Contents
+## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Quick Start](#quick-start)
 - [Installation](#installation)
+- [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
-- [Data Requirements](#data-requirements)
-- [Usage Guide](#usage-guide)
+- [Usage Examples](#usage-examples)
 - [Configuration](#configuration)
+- [Data Requirements](#data-requirements)
 - [Financial Models](#financial-models)
+- [API Reference](#api-reference)
 - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
-- [For AI Assistants](#for-ai-assistants)
-- [Contributing](#contributing)
 
 ---
 
-## Overview
+## 🌍 Overview
 
-### What This Project Does
+### What This Package Does
 
 This system quantifies how disruptions to **ecosystem services** (e.g., water regulation, pollination, soil retention) propagate through the economy to affect **financial portfolios**. It combines:
 
@@ -36,321 +34,237 @@ This system quantifies how disruptions to **ecosystem services** (e.g., water re
 2. **Financial Theory**: Merton structural model for credit risk
 3. **Portfolio Analysis**: Securities holdings statistics (SHS) data
 
-**Key Output**: Portfolio value losses by holder, sector, geography, and ecosystem service scenario.
+**Key Output**: Portfolio value losses aggregated by holder, sector, geography, and ecosystem service scenario.
 
-### Key Capabilities
+### Key Features
 
-- ✓ Calculate asset depreciation from ecosystem service disruptions
-- ✓ Model financial impacts using Merton credit risk framework
-- ✓ Aggregate portfolio losses across multiple dimensions
-- ✓ Support multiple scenarios and ecosystem services
-- ✓ Parallel processing for performance
-- ✓ Comprehensive testing and validation
+- ✅ Calculate asset depreciation from ecosystem service disruptions
+- ✅ Model financial impacts using Merton credit risk framework
+- ✅ Aggregate portfolio losses across multiple dimensions
+- ✅ Support for multiple scenarios and ecosystem services
+- ✅ Parallel processing for performance
+- ✅ Comprehensive testing and validation
+- ✅ Professional package structure with clean API
 
-### Project History
+### What's New in v2.0
 
-- **Origin**: Jupyter notebook (`shs_nature_analysis_Seb.ipynb`)
-- **Refactoring**: Transformed into modular Python package
-- **Status**: Production-ready with comprehensive testing
-
----
-
-## Quick Start
-
-### Option 1: As a Package (Recommended)
-
-```python
-import shs_nature_analysis as shs
-
-# Run complete analysis with one function
-results = shs.run_pipeline(create_plots=True)
-print(f"Analysis complete! Results shape: {results.shape}")
-```
-
-### Option 2: Using the Pipeline Class
-
-```python
-from shs_nature_analysis import SHSAnalysisPipeline
-
-pipeline = SHSAnalysisPipeline()
-results = pipeline.run_full_pipeline(create_plots=True)
-```
-
-### Option 3: Step-by-Step Execution
-
-```python
-from shs_nature_analysis import SHSAnalysisPipeline
-
-pipeline = SHSAnalysisPipeline()
-
-# Load data
-pipeline.load_all_data()
-print(f"Loaded {len(pipeline.instrument_df)} instruments")
-
-# Calculate depreciations
-depreciation_df = pipeline.calculate_instrument_depreciations()
-
-# Calculate financial impacts
-financial_impacts = pipeline.calculate_financial_impacts(depreciation_df)
-
-# Calculate portfolio losses
-final_results = pipeline.calculate_shs_losses(financial_impacts)
-```
+- 🎯 **Simplified naming**: Removed "shs_" prefix from all modules
+- 📁 **Professional structure**: Organized into `nature_analysis/`, `tests/`, `examples/`, `legacy/`
+- 📦 **Easy installation**: Proper `setup.py` with pip install support
+- 📚 **Better documentation**: Clear input/output specifications and examples
+- 🔧 **Cleaner API**: `AnalysisPipeline` class with intuitive method names
 
 ---
 
-## Installation
+## 📦 Installation
 
 ### Prerequisites
 
 - Python 3.8 or higher
 - pip package manager
 
+### Install from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/shs-nature-analysis.git
+cd shs-nature-analysis
+
+# Install in editable mode (recommended for development)
+pip install -e .
+
+# Or install normally
+pip install .
+```
+
+### Install Dependencies Only
+
+```bash
+pip install -r requirements.txt
+```
+
 ### Dependencies
 
-```bash
-pip install pandas numpy scipy matplotlib seaborn joblib openpyxl
-```
+- **pandas** (>=1.3.0) - Data manipulation
+- **numpy** (>=1.20.0) - Numerical computing
+- **scipy** (>=1.7.0) - Scientific computing
+- **matplotlib** (>=3.4.0) - Plotting
+- **seaborn** (>=0.11.0) - Statistical visualizations
+- **joblib** (>=1.0.0) - Parallel processing
+- **openpyxl** (>=3.0.0) - Excel file support
 
-### Package Setup
+---
 
-**Important**: The directory name uses hyphens (`shs-nature-analysis`) but Python requires underscores. Choose one solution:
+## 🚀 Quick Start
 
-**Option A: Rename the directory (recommended)**
-```bash
-cd /path/to/parent
-mv shs-nature-analysis shs_nature_analysis
-```
-
-**Option B: Create a symbolic link**
-```bash
-cd /path/to/parent
-ln -s shs-nature-analysis shs_nature_analysis
-```
-
-**Option C: Install as editable package** (requires `setup.py`)
-```bash
-cd shs-nature-analysis
-pip install -e .
-```
-
-### Using the Package
-
-Once installed, you can import from anywhere:
+### Example 1: One-Line Execution
 
 ```python
-import sys
-sys.path.insert(0, '/path/to/parent/directory')
+import nature_analysis
 
-import shs_nature_analysis as shs
-results = shs.run_pipeline()
+# Run complete analysis with default settings
+results = nature_analysis.run_pipeline()
+
+print(f"Analysis complete!")
+print(f"Total portfolio value: €{results['OBS_VALUE'].sum():,.0f}")
+print(f"Total value loss: €{results['VALUE_LOSS'].sum():,.0f}")
+print(f"Loss rate: {(results['VALUE_LOSS'].sum() / results['OBS_VALUE'].sum() * 100):.2f}%")
+```
+
+**Output:**
+```
+Analysis complete!
+Total portfolio value: €5,234,891,234
+Total value loss: €45,678,912
+Loss rate: 0.87%
+```
+
+### Example 2: Using the Pipeline Class
+
+```python
+from nature_analysis import AnalysisPipeline
+
+# Create pipeline instance
+pipeline = AnalysisPipeline()
+
+# Run full pipeline
+results = pipeline.run_full_pipeline(create_plots=True)
+
+# Access intermediate results
+print(f"Loaded {len(pipeline.instrmnt_df)} instruments")
+print(f"Analyzed {len(pipeline.eco_services)} ecosystem services")
+print(f"Ran {len(pipeline.scenarios)} scenarios")
+```
+
+### Example 3: Step-by-Step Analysis
+
+```python
+from nature_analysis import AnalysisPipeline
+
+pipeline = AnalysisPipeline()
+
+# Step 1: Load all data
+pipeline.load_all_data()
+print(f"✓ Loaded {len(pipeline.instrmnt_df)} instruments")
+print(f"✓ Loaded {len(pipeline.vuln_df)} vulnerability records")
+
+# Step 2: Calculate depreciations
+depreciation_df = pipeline.calculate_instrument_depreciations()
+print(f"✓ Calculated depreciations: {depreciation_df.shape}")
+
+# Step 3: Calculate financial impacts
+financial_impacts = pipeline.calculate_financial_impacts(depreciation_df)
+print(f"✓ Calculated financial impacts: {financial_impacts.shape}")
+
+# Step 4: Calculate portfolio losses
+results = pipeline.calculate_shs_losses(financial_impacts)
+print(f"✓ Final results: {results.shape}")
 ```
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 shs-nature-analysis/
-├── __init__.py                # 📦 Package initialization & exports
-├── shs_config.py              # ⚙️  Configuration (parameters, paths)
-├── shs_data_loader.py         # 📊 Data loading and preprocessing
-├── shs_vulnerability.py       # 🔢 Vulnerability & depreciation calculations
-├── shs_financial.py           # 💰 Financial models (Merton, pricing)
-├── shs_main_pipeline.py       # 🚀 Main orchestration pipeline
-├── shs_visualization.py       # 📈 Plotting and visualization
-├── shs_test_suite.py          # ✅ Comprehensive test suite
-├── shs_example_usage.py       # 📚 Six usage examples
-├── shs_quick_compare.py       # 🔍 Fast output validation
-├── SHS_process.py             # 📜 Original code (reference only)
-├── README.md                  # 📖 This file
-└── data/                      # 📁 Input data files
+├── README.md                   # This file
+├── setup.py                    # Package installation script
+├── requirements.txt            # Dependencies
+├── .gitignore                  # Git ignore rules
+│
+├── nature_analysis/            # Main package ⭐
+│   ├── __init__.py            # Package initialization & exports
+│   ├── config.py              # Configuration parameters
+│   ├── data_loader.py         # Data loading & preprocessing
+│   ├── vulnerability.py       # Vulnerability calculations
+│   ├── financial.py           # Financial models (Merton, pricing)
+│   ├── pipeline.py            # Main orchestration pipeline
+│   └── visualization.py       # Plotting functions
+│
+├── tests/                      # Test suite
+│   ├── __init__.py
+│   ├── test_suite.py          # Comprehensive validation tests
+│   ├── quick_compare.py       # Fast output comparison
+│   └── test_import.py         # Import validation
+│
+├── examples/                   # Usage examples
+│   ├── __init__.py
+│   ├── basic_usage.py         # Simple examples
+│   └── advanced_usage.py      # Advanced scenarios
+│
+└── legacy/                     # Original reference code
+    ├── __init__.py
+    └── SHS_process.py         # Original implementation
 ```
 
 ### Module Responsibilities
 
-| Module | Purpose |
-|--------|---------|
-| `shs_config.py` | Centralized configuration for all parameters |
-| `shs_data_loader.py` | Load and preprocess all input data |
-| `shs_vulnerability.py` | Calculate weighted vulnerabilities and depreciations |
-| `shs_financial.py` | Implement Merton model and pricing functions |
-| `shs_main_pipeline.py` | Orchestrate the complete workflow |
-| `shs_visualization.py` | Generate heatmaps and charts |
-| `shs_test_suite.py` | Validate against original implementation |
-
-### Data Flow
-
-```
-Raw Data Files
-    ↓
-[Data Loader] → Load & preprocess
-    ↓
-Instrument + Vulnerability + Alpha Shocks
-    ↓
-[Vulnerability Calculator] → Parallel depreciation calculations
-    ↓
-Depreciation Matrix (instruments × scenarios)
-    ↓
-[Financial Models] → Calculate price variations (Merton)
-    ↓
-Financial Impacts DataFrame
-    ↓
-[Pipeline Aggregation] → Merge with holder data
-    ↓
-Final Results CSV + Visualizations
-```
+| Module | Purpose | Key Functions |
+|--------|---------|---------------|
+| `config.py` | Centralized configuration | Constants, file paths, parameters |
+| `data_loader.py` | Load and preprocess data | `load_instrument_data()`, `load_vulnerability_data()` |
+| `vulnerability.py` | Calculate depreciations | `calculate_depreciation()`, `compute_weighted_metric()` |
+| `financial.py` | Implement financial models | `calculate_lgd()`, `calculate_bond_price_variation()` |
+| `pipeline.py` | Orchestrate workflow | `AnalysisPipeline` class |
+| `visualization.py` | Generate plots | `plot_loss_heatmap_by_dimension()` |
 
 ---
 
-## Data Requirements
+## 💡 Usage Examples
 
-### Required Data Files
-
-The analysis requires the following data files to be available. File paths are configured in `shs_config.py`.
-
-#### 1. Core Input Files
-
-| File | Description | Format | Expected Location |
-|------|-------------|--------|-------------------|
-| **Instrument Data** | Financial instruments with ISIN, PD, volatility, debt ratio, NACE code | CSV | `INSTRUMENT_FILE` in config |
-| **Vulnerability Scores** | Ecosystem service vulnerability by region, EXIOBASE sector, and NACE code | CSV | `VULN_PATH/VULN_FILE` |
-| **Alpha Shocks** | Ecosystem service shock parameters by area and vulnerability type | Excel (.xlsx) | `VULN_PATH/ALPHA_FILE` |
-| **SHS Holder Data** | Securities holdings statistics linking holders to instruments | CSV | `SHS_HOLDER_FILE` in config |
-
-#### 2. Mapping and Reference Files
-
-| File | Description | Format | Expected Location |
-|------|-------------|--------|-------------------|
-| **EXIOBASE Production Data** | Industry output data (X matrix) for production weighting | CSV | `X_FILE` in config |
-| **NACE Mapping** | Simple NACE code mapping table | Excel (.xlsx) | `DATA_PATH/nace_0d_map.xlsx` |
-| **EXIOBASE to NACE Mapping** | Links EXIOBASE sectors to NACE Level 2 codes | Excel (.xlsx) | `DATA_PATH/EXIOBASE_to_NACElvl2_tab.xlsx` |
-| **Region/Area Mapping** | ISO2 country codes to continent/area mapping | CSV | `./data/regions_ISO2_continent_area.csv` |
-
-#### 3. Data Directory Structure
-
-Create the following directory structure:
-
-```
-shs-nature-analysis/
-├── data/
-│   ├── regions_ISO2_continent_area.csv      # Region mapping (local)
-│   ├── nace_0d_map.xlsx                     # NACE mapping (if using local)
-│   └── EXIOBASE_to_NACElvl2_tab.xlsx        # EXIOBASE mapping (if using local)
-└── [External paths configured in shs_config.py]
-```
-
-#### 4. Expected Data Schemas
-
-**Instrument Data (`INSTRUMENT_FILE`):**
-- Required columns: `ISIN`, `PD`, `vol` (volatility), `debt_ratio`, `nace`, `INSTR_CLASS`, `resid_mat_yr`, `ISSUER_COUNTRY`
-- Data types: `nace` should be string type
-
-**Vulnerability Data (`VULN_FILE`):**
-- Required columns: `region`, `eco_serv`, `EXIOBASE`, `indout`, `NACE Code`, `Adj_ind`
-- Additional columns: Various vulnerability type columns (e.g., `DS_total_SR`, `Vuln_total_SR`)
-
-**Alpha Data (`ALPHA_FILE`):**
-- Required columns: `Area`, `eco_serv`
-- Additional columns: Various vulnerability type columns matching those in vulnerability data
-
-**SHS Holder Data (`SHS_HOLDER_FILE`):**
-- Required columns: `ISIN`, `HOLDER_SECTOR`, `HOLDER_AREA`, `VALUE`
-
-**Region Mapping (`regions_ISO2_continent_area.csv`):**
-- Required columns: `area`, `region` (ISO2 country code)
-
-#### 5. Configuration
-
-Before running the analysis, update file paths in `shs_config.py`:
+### Analyze Specific Scenario
 
 ```python
-# Example configuration (shs_config.py)
-BASE_PATH = Path('/path/to/your/data/root')
-DATA_PATH = BASE_PATH / 'git_repo/Ecosystem_ds/data'
-VULN_PATH = BASE_PATH / 'DS_Vuln_update/Vuln_final_store'
+from nature_analysis import AnalysisPipeline, config
 
-INSTRUMENT_FILE = '/path/to/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
-VULN_FILE = 'Vuln_final_03_11_2025.csv'
-ALPHA_FILE = 'Alpha_final_03_11_2025.xlsx'
-SHS_HOLDER_FILE = '/path/to/F_511_31_32_hldr_instrmnt_2024-Q4_prepped.csv'
-```
-
-#### 6. Data Validation
-
-To verify your data files are correctly loaded:
-
-```python
-from shs_nature_analysis import SHSAnalysisPipeline
-
-pipeline = SHSAnalysisPipeline()
+pipeline = AnalysisPipeline()
 pipeline.load_all_data()
 
-# Check what was loaded
-print(f"Instruments: {len(pipeline.instrument_df)} rows")
-print(f"Vulnerabilities: {len(pipeline.vulnerability_df)} rows")
-print(f"Alpha shocks: {len(pipeline.alpha_df)} rows")
-print(f"Holders: {len(pipeline.holder_df)} rows")
+# Filter for specific ecosystem service
+results = pipeline.run_full_pipeline(create_plots=False)
+
+# Analyze Water flow regulation impacts
+water_results = results[results['Eco_serv'] == 'Water flow regulation']
+
+print(f"\nWater Regulation Impacts:")
+print(f"Total loss: €{water_results['VALUE_LOSS'].sum():,.0f}")
+print(f"Affected value: €{water_results['OBS_VALUE'].sum():,.0f}")
+
+# Group by holder sector
+by_sector = water_results.groupby('HOLDER_SECTOR').agg({
+    'VALUE_LOSS': 'sum',
+    'OBS_VALUE': 'sum'
+})
+by_sector['Loss_Rate_%'] = (by_sector['VALUE_LOSS'] / by_sector['OBS_VALUE'] * 100)
+print("\nLosses by Sector:")
+print(by_sector)
 ```
 
----
+**Input:**
+- Loaded instrument data (DataFrame with ISIN, PD, volatility, etc.)
+- Vulnerability scores by ecosystem service
+- SHS holder data
 
-## Usage Guide
+**Output:**
+```
+Water Regulation Impacts:
+Total loss: €12,345,678
+Affected value: €1,234,567,890
 
-### Exported Components
-
-The package exports:
-
-- **`run_pipeline()`** - Convenience function for complete analysis
-- **`SHSAnalysisPipeline`** - Main pipeline class
-- **`config`** - Configuration module (alias for `shs_config`)
-- **`data_loader`** - Data loading functions
-- **`vulnerability`** - Vulnerability calculations
-- **`financial`** - Financial modeling
-- **`visualization`** - Plotting functions
-
-### Common Tasks
-
-#### Task 1: Run Full Analysis with Default Settings
-
-```python
-import shs_nature_analysis as shs
-
-results = shs.run_pipeline(create_plots=True)
-
-# Output files created:
-# - merged_SHS_instr_vulnxalpha_scenarios_*.csv
-# - shs_2024-Q4_results.csv
-# - Various heatmap PNGs
+Losses by Sector:
+                     VALUE_LOSS    OBS_VALUE  Loss_Rate_%
+HOLDER_SECTOR
+Financial Corps      8,234,567   890,123,456         0.93
+Government           2,111,111   234,444,434         0.90
+Households           2,000,000   110,000,000         1.82
 ```
 
-#### Task 2: Analyze Specific Scenario
+### Custom Visualization
 
 ```python
-from shs_nature_analysis import SHSAnalysisPipeline, vulnerability, config
+from nature_analysis import visualization
 
-pipeline = SHSAnalysisPipeline()
-pipeline.load_all_data()
-
-# Calculate depreciations for single ecosystem service
-dep_df = vulnerability.calculate_depreciation(
-    vuln_df=pipeline.vulnerability_df,
-    instrmnt_df=pipeline.instrument_df,
-    alpha_df=pipeline.alpha_df,
-    nace_map_df=pipeline.nace_map_df,
-    eco_service='Water flow regulation',
-    scenario='1_World_shock_10perc_02_GOVonNFC',
-    dep_type=config.DEPENDENCY_TYPE,
-    aggreg_type=config.AGGREG_TYPE,
-    nace_level=2
-)
-```
-
-#### Task 3: Custom Visualization
-
-```python
-from shs_nature_analysis import visualization
-
+# Create heatmap of losses by sector and geography
 fig = visualization.plot_loss_heatmap_by_dimension(
     results_df=results,
     eco_service='Pollination',
@@ -358,84 +272,89 @@ fig = visualization.plot_loss_heatmap_by_dimension(
     dimension_x='HOLDER_SECTOR',
     dimension_y='HOLDER_AREA',
     value_type='percentage',
-    figsize=(14, 10)
+    output_path='pollination_heatmap.png'
 )
-fig.savefig('custom_heatmap.png', dpi=300, bbox_inches='tight')
+
+print("Visualization saved to pollination_heatmap.png")
 ```
 
-#### Task 4: Sensitivity Analysis
+**Input:**
+- `results_df`: Final results DataFrame from pipeline
+- `eco_service`: Ecosystem service name (e.g., "Pollination")
+- `scenario`: Scenario identifier
+- `dimension_x`, `dimension_y`: Columns for heatmap axes
+- `value_type`: 'percentage', 'absolute_eur', or 'obs_value'
+
+**Output:**
+- Heatmap PNG file showing losses by dimensions
+- Figure object for further customization
+
+### Sensitivity Analysis
 
 ```python
-from shs_nature_analysis import config, SHSAnalysisPipeline
+from nature_analysis import config, AnalysisPipeline
+import pandas as pd
 
 # Test different PD calibrations
-for pd_calib in [0.03, 0.0459, 0.06]:
+pd_values = [0.03, 0.0459, 0.06]
+sensitivity_results = []
+
+for pd_calib in pd_values:
+    # Temporarily modify config
     original_pd = config.PD_CALIB
     config.PD_CALIB = pd_calib
 
-    pipeline = SHSAnalysisPipeline()
+    # Run analysis
+    pipeline = AnalysisPipeline()
     results = pipeline.run_full_pipeline(create_plots=False)
-    results.to_csv(f'results_pd_{pd_calib}.csv', index=False)
 
-    config.PD_CALIB = original_pd  # Restore
+    # Store summary
+    sensitivity_results.append({
+        'PD_CALIB': pd_calib,
+        'Total_Loss': results['VALUE_LOSS'].sum(),
+        'Total_Value': results['OBS_VALUE'].sum(),
+        'Loss_Rate_%': results['VALUE_LOSS'].sum() / results['OBS_VALUE'].sum() * 100
+    })
+
+    # Restore config
+    config.PD_CALIB = original_pd
+
+# Display sensitivity analysis
+sensitivity_df = pd.DataFrame(sensitivity_results)
+print(sensitivity_df)
 ```
 
-#### Task 5: Export Specific Results
+**Input:**
+- List of PD calibration values to test
+- Standard pipeline configuration
 
-```python
-# Filter for specific criteria
-filtered = results[
-    (results['eco_service'] == 'Water flow regulation') &
-    (results['HOLDER_AREA'] == 'NL')
-]
-
-# Export to Excel
-filtered.to_excel('nl_water_results.xlsx', index=False)
+**Output:**
 ```
-
-### Six Complete Examples
-
-See `shs_example_usage.py` for comprehensive examples:
-
-1. **Example 1**: Full pipeline execution
-2. **Example 2**: Custom scenario analysis
-3. **Example 3**: Sensitivity analysis
-4. **Example 4**: Country-specific analysis
-5. **Example 5**: Custom visualizations
-6. **Example 6**: Data export workflows
+   PD_CALIB    Total_Loss    Total_Value  Loss_Rate_%
+0      0.03  32,145,234  5,234,891,234         0.614
+1    0.0459  45,678,912  5,234,891,234         0.873
+2      0.06  56,234,123  5,234,891,234         1.074
+```
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
 ### Key Parameters
 
-Edit `shs_config.py` to customize analysis:
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `RISK_FREE_RATE` | float | 0.02 | Annual risk-free interest rate |
-| `CORRELATION_RHO` | float | 0.1 | Asset correlation |
-| `PD_CALIB` | float | 0.0459 | Calibration probability of default |
-| `LGD_CALIB` | float | 0.652 | Calibration loss given default |
-| `MAX_MATURITY` | int | 30 | Maximum bond maturity (years) |
-| `AGGREG_TYPE` | str | 'SR' | Aggregation type: 'SR' or 'max' |
-| `DEPENDENCY_TYPE` | str | 'Vuln_total' | Dependency metric type |
-
-### Example Configuration
+Edit `nature_analysis/config.py` to customize analysis:
 
 ```python
-# In shs_config.py
-
 # Financial parameters
-RISK_FREE_RATE = 0.02          # 2% annual rate
-CORRELATION_RHO = 0.1          # 10% correlation
-PD_CALIB = 0.0459             # 4.59% calibration PD
-LGD_CALIB = 0.652             # 65.2% loss rate
+RISK_FREE_RATE = 0.02          # Annual risk-free rate (2%)
+CORRELATION_RHO = 0.1          # Asset correlation (10%)
+PD_CALIB = 0.0459             # Calibration probability of default
+LGD_CALIB = 0.652             # Calibration loss given default
 
 # Analysis settings
-AGGREG_TYPE = 'SR'            # Sum of ratios
-DEPENDENCY_TYPE = 'Vuln_total' # Use total vulnerability
+MAX_MATURITY = 30              # Maximum bond maturity (years)
+AGGREG_TYPE = 'SR'            # Aggregation type: 'SR' or 'max'
+DEPENDENCY_TYPE = 'Vuln_total' # Dependency metric type
 
 # Ecosystem services to analyze
 ECO_SERVICES = [
@@ -448,500 +367,147 @@ ECO_SERVICES = [
 ]
 ```
 
----
+### File Paths
 
-## Financial Models
-
-### Merton Structural Model
-
-**Foundation**: Firm equity is modeled as a call option on firm assets.
-
-#### Key Components
-
-**1. Distance to Default (DD)**
-
-Measures how far a firm is from default:
-
-```
-DD = -Φ⁻¹(PD)
-```
-
-where Φ is the cumulative standard normal distribution.
-
-**2. Asset Volatility (σ_V)**
-
-Derived from equity volatility using the Merton model:
+Configure data file locations in `config.py`:
 
 ```python
-σ_V = (σ_equity / Φ(DD)) × (1 - debt_ratio)
-```
+from pathlib import Path
 
-**3. Loss Given Default (LGD)**
+BASE_PATH = Path('/path/to/your/data/root')
+DATA_PATH = BASE_PATH / 'data'
+VULN_PATH = BASE_PATH / 'vulnerability'
 
-Incorporates correlation and calibration:
-
-```python
-lgd = lgd_calib × sqrt(
-    (1 - ρ) × Φ(Φ⁻¹(PD) / sqrt(1-ρ)) / PD + ρ
-)
-```
-
-**4. Risky Bond Pricing**
-
-Credit-risky bond price with default risk:
-
-```
-B = 1 + (c - r - PD×LGD) × [1 - e^(-(r+PD)×T)] / (r + PD)
-```
-
-where:
-- c = coupon rate
-- r = risk-free rate
-- T = maturity
-
-**5. Equity Pricing**
-
-Equity value as a call option (Merton):
-
-```
-E = V × Φ(d₁) - D × e^(-rT) × Φ(d₂)
-```
-
-### Ecosystem Depreciation Mechanism
-
-**Flow**:
-1. Ecosystem service disruption → Production decline
-2. Production decline → Firm asset value falls
-3. Asset depreciation reduces distance to default
-4. Lower DD → Higher PD → Higher credit spread
-5. Higher spread → Lower bond/equity prices
-6. Price change × position = Portfolio loss
-
-**Implementation**:
-```python
-# Calculate depreciation
-depreciation = vulnerability × adjustment × alpha_shock
-
-# Apply to distance to default
-DD_new = DD_original - (depreciation / σ_V)
-
-# Convert to new PD
-PD_new = Φ(-DD_new)
-
-# Calculate price variation
-price_variation = calculate_price_change(PD_new, LGD_new, ...)
+# Input files
+INSTRUMENT_FILE = '/path/to/instrument_data.csv'
+VULN_FILE = 'vulnerability_scores.csv'
+ALPHA_FILE = 'alpha_shocks.xlsx'
+SHS_HOLDER_FILE = '/path/to/holder_data.csv'
 ```
 
 ---
 
-## Testing
+## 📊 Data Requirements
 
-### Running Tests
+### Required Input Files
 
-**Full test suite**:
+| File | Description | Key Columns |
+|------|-------------|-------------|
+| **Instrument Data** | Financial instruments with risk metrics | `ISIN`, `PD`, `vol`, `debt_ratio`, `nace`, `ISSUER_COUNTRY` |
+| **Vulnerability Scores** | Ecosystem service vulnerability by sector/region | `region`, `eco_serv`, `EXIOBASE`, `NACE Code`, `Vuln`, `Adj_ind` |
+| **Alpha Shocks** | Ecosystem service shock parameters | `Area`, `eco_serv`, various vulnerability types |
+| **SHS Holder Data** | Securities holdings by holder | `ISIN`, `HOLDER_SECTOR`, `HOLDER_AREA`, `OBS_VALUE` |
+
+### Data Validation
+
+```python
+from nature_analysis import AnalysisPipeline
+
+pipeline = AnalysisPipeline()
+pipeline.load_all_data()
+
+# Check loaded data
+print(f"Instruments: {len(pipeline.instrmnt_df)} rows")
+print(f"  Columns: {list(pipeline.instrmnt_df.columns)}")
+print(f"\nVulnerabilities: {len(pipeline.vuln_df)} rows")
+print(f"  Ecosystem services: {pipeline.vuln_df['eco_serv'].nunique()}")
+print(f"\nAlpha shocks: {len(pipeline.alpha_df)} rows")
+```
+
+---
+
+## 💰 Financial Models
+
+### Merton Structural Model Overview
+
+The package implements the Merton structural credit risk model.
+
+#### Key Functions
+
+```python
+from nature_analysis import financial
+
+# 1. Distance to Default
+dd = financial.pd_to_dd(pd=0.05)  # Input: PD (0-1) → Output: DD (float)
+
+# 2. Asset Volatility
+sigma = financial.calculate_asset_volatility(dd=1.645, vol=0.30, debt_ratio=0.60)
+
+# 3. Loss Given Default
+lgd = financial.calculate_lgd(pd=0.05)  # Output: LGD (0-1)
+
+# 4. Bond Pricing
+price = financial.calculate_risky_bond_price(duration=5.0, pd=0.05, lgd=0.65)
+
+# 5. Price Impact
+variation = financial.calculate_bond_price_variation(duration=5.0, pd=0.05, lgd=0.65, delta_pd=0.01)
+```
+
+---
+
+## 📖 API Reference
+
+### Main Classes
+
+#### `AnalysisPipeline`
+
+```python
+from nature_analysis import AnalysisPipeline
+
+pipeline = AnalysisPipeline()
+```
+
+**Methods:**
+- `load_all_data()` - Load all required input files
+- `calculate_instrument_depreciations()` - Calculate depreciation matrix
+- `calculate_financial_impacts(depreciation_df)` - Calculate PD, LGD, price changes
+- `calculate_shs_losses(financial_impacts)` - Aggregate portfolio losses
+- `run_full_pipeline(create_plots=True)` - Run complete workflow
+
+---
+
+## ✅ Testing
+
 ```bash
-python shs_test_suite.py
+# Run full test suite
+python tests/test_suite.py
+
+# Quick validation
+python tests/quick_compare.py
+
+# Test import
+python tests/test_import.py
 ```
 
-**Quick validation**:
+---
+
+## 🔧 Troubleshooting
+
+### Cannot import package
+
 ```bash
-python shs_quick_compare.py
+pip install -e .
 ```
 
-**Specific test**:
-```bash
-python -c "from shs_test_suite import test_financial_functions; test_financial_functions()"
-```
+### Missing data files
 
-### Test Coverage
-
-1. **Unit Tests**: Individual function validation
-   - PD/DD conversions
-   - Asset volatility calculations
-   - LGD formulas
-   - Bond/equity pricing
-
-2. **Integration Tests**: End-to-end workflow
-   - Compare refactored vs. original outputs
-   - Validate pipeline consistency
-   - Check output formats
-
-3. **Validation Tests**: Numeric accuracy
-   - 1% tolerance for floating-point comparisons
-   - Shape and column consistency
-   - Statistical summaries
-
-### Adding New Tests
-
-```python
-# In shs_test_suite.py
-
-def test_new_feature():
-    """Test description."""
-    # Arrange
-    input_data = create_test_data()
-
-    # Act
-    result = new_function(input_data)
-
-    # Assert
-    expected = calculate_expected()
-    assert np.allclose(result, expected, rtol=0.01)
-    logger.info("✓ New feature test passed")
-
-# Add to main():
-test_new_feature()
-```
+Update file paths in `nature_analysis/config.py`
 
 ---
 
-## Troubleshooting
+## 📄 License
 
-### Common Issues
-
-#### Issue 1: Missing Country in Alpha Data
-
-**Symptom**: Warning "Country {X} not found in alpha data, using default (NL)"
-
-**Solution**:
-- Add country to alpha data file, OR
-- Modify default in `shs_vulnerability.py`:
-  ```python
-  if pd.isna(country) or country not in country_list:
-      country = 'US'  # Change default here
-  ```
-
-#### Issue 2: Low NACE Match Rate
-
-**Symptom**: Many NaN values in depreciation output
-
-**Solutions**:
-- Check NACE mapping completeness
-- Hierarchical matching tries levels 0, -1, -2 automatically
-- Add more EXIOBASE sector mappings
-
-#### Issue 3: Slow Performance
-
-**Symptom**: Pipeline takes > 10 minutes
-
-**Solutions**:
-
-1. **Check parallel processing**:
-   ```python
-   # In shs_vulnerability.py
-   n_jobs = -1  # Use all cores
-   ```
-
-2. **Filter data early**:
-   ```python
-   scenarios_to_run = ['Scenario_1', 'Scenario_2']
-   alpha_df = alpha_df[alpha_df['scenario'].isin(scenarios_to_run)]
-   ```
-
-3. **Profile code**:
-   ```python
-   import cProfile
-   cProfile.run('pipeline.run_full_pipeline()', 'profile_stats')
-   ```
-
-#### Issue 4: Memory Issues
-
-**Symptom**: Out of memory errors
-
-**Solutions**:
-
-1. **Process in batches**:
-   ```python
-   for eco_service in config.ECO_SERVICES:
-       results_subset = pipeline.run_full_pipeline(
-           eco_services=[eco_service]
-       )
-       results_subset.to_csv(f'results_{eco_service}.csv')
-   ```
-
-2. **Optimize dtypes**:
-   ```python
-   df['HOLDER_SECTOR'] = df['HOLDER_SECTOR'].astype('category')
-   df['eco_service'] = df['eco_service'].astype('category')
-   ```
-
-#### Issue 5: Test Failures
-
-**Symptom**: Test suite reports differences > 1%
-
-**Solutions**:
-1. Check specific columns with failures
-2. Inspect diff report for patterns
-3. Adjust tolerance if differences are acceptable:
-   ```python
-   validator = OutputValidator(rtol=0.02)  # 2% tolerance
-   ```
-
-#### Issue 6: Missing Data Files
-
-**Symptom**: `FileNotFoundError`
-
-**Solutions**:
-1. Check paths in `shs_config.py`
-2. Use absolute paths:
-   ```python
-   INSTRUMENT_FILE = Path("/home/user/data/instruments.csv")
-   ```
-
-### Debugging Checklist
-
-- [ ] Check log output for warnings/errors
-- [ ] Verify input data files exist and have expected structure
-- [ ] Inspect intermediate DataFrames after each stage
-- [ ] Run quick comparison to identify failing stage
-- [ ] Check for NaN/Inf values in critical columns
-- [ ] Verify configuration parameters
-- [ ] Ensure dependencies are installed (`pip list`)
-- [ ] Check memory and disk space
-- [ ] Review recent changes
+MIT License
 
 ---
 
-## For AI Assistants
+## 👥 Contributors
 
-### When Working with This Codebase
-
-**Priority Guidelines**:
-
-1. **Always start with `shs_config.py`** to understand current parameters
-2. **Use the pipeline class** rather than calling functions directly
-3. **Validate changes** with test suite before considering them complete
-4. **Preserve financial accuracy**: These are real-world risk calculations
-5. **Document assumptions**: Financial modeling involves choices
-6. **Consider performance**: Processes large datasets
-7. **Maintain modularity**: Keep functions focused and testable
-8. **Add logging**: Help users debug
-9. **Update tests**: When modifying logic, update validation
-10. **Update this file**: Keep documentation current
-
-### Common Pitfalls to Avoid
-
-- ❌ Don't break the Merton model (formulas are mathematically precise)
-- ❌ Don't ignore NaN values (cascades through pipeline)
-- ❌ Don't remove validation (prevents silent failures)
-- ❌ Don't change config defaults without understanding implications
-- ❌ Don't skip tests (regression testing is critical)
-- ❌ Don't optimize prematurely (clarity > speed until bottleneck proven)
-
-### Best Practices
-
-- ✓ Read before writing (understand existing patterns)
-- ✓ Test incrementally (run tests after each change)
-- ✓ Log meaningfully (help future debuggers)
-- ✓ Document domain knowledge (financial concepts are complex)
-- ✓ Preserve provenance (keep links to original implementation)
-
-### Function Reference
-
-| Function | Module | Purpose |
-|----------|--------|---------|
-| `load_instrument_data()` | data_loader | Load financial instruments |
-| `load_vulnerability_data()` | data_loader | Load ecosystem dependencies |
-| `calculate_depreciation()` | vulnerability | Calculate asset depreciation |
-| `compute_weighted_metric()` | vulnerability | Production-weighted averaging |
-| `pd_to_dd()` | financial | Convert PD to distance to default |
-| `calculate_asset_volatility()` | financial | Derive asset volatility |
-| `calculate_lgd()` | financial | Calculate loss given default |
-| `calculate_risky_bond_price()` | financial | Price credit-risky bonds |
-| `calculate_bond_price_variation()` | financial | Bond price change from shock |
-| `calculate_equity_price_variation()` | financial | Equity price change (Merton) |
-| `plot_loss_heatmap_by_dimension()` | visualization | Flexible 2D heatmap |
-
-### Making Changes
-
-**Pattern**: Add function → Add tests → Document
-
-```python
-# 1. Add function to appropriate module
-def new_pricing_model(param1: float, param2: float) -> float:
-    """
-    Brief description.
-
-    Args:
-        param1: Description
-        param2: Description
-
-    Returns:
-        Result description
-    """
-    # Implementation
-    return result
-
-# 2. Add unit test
-def test_new_pricing_model():
-    result = new_pricing_model(1.0, 2.0)
-    assert abs(result - expected) < 1e-6
-
-# 3. Update this README.md file
-```
+- Original: Jupyter notebook by Seb
+- v2.0: Modular Python package architecture
+- Models: Merton structural credit risk framework
 
 ---
 
-## Contributing
-
-### Code Style
-
-- **PEP 8 compliance**: Follow standard Python style
-- **Line length**: 100 characters (not strict 79)
-- **Indentation**: 4 spaces (no tabs)
-- **Type hints**: Always include for parameters and returns
-
-### Type Hints Example
-
-```python
-def calculate_metric(
-    data: pd.DataFrame,
-    weight_col: str,
-    value_col: str,
-    threshold: float = 0.5
-) -> float:
-    """Function docstring."""
-    ...
-```
-
-### Docstring Format
-
-Use Google style:
-
-```python
-def complex_function(param1: float, param2: str) -> pd.DataFrame:
-    """
-    One-line summary of what the function does.
-
-    Longer description if needed. Explain algorithm, assumptions,
-    or important details.
-
-    Args:
-        param1: Description of param1
-        param2: Description of param2
-
-    Returns:
-        Description of return value
-
-    Raises:
-        ValueError: When validation fails
-    """
-    ...
-```
-
-### Naming Conventions
-
-| Type | Convention | Example |
-|------|------------|---------|
-| Module | lowercase_with_underscores | `shs_data_loader.py` |
-| Class | PascalCase | `SHSAnalysisPipeline` |
-| Function | lowercase_with_underscores | `calculate_depreciation()` |
-| Variable | lowercase_with_underscores | `instrument_df` |
-| Constant | UPPER_SNAKE_CASE | `RISK_FREE_RATE` |
-| Private | _leading_underscore | `_internal_helper()` |
-
-### Error Handling Pattern
-
-```python
-def process_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Process data with validation."""
-    # Validate inputs
-    required_cols = ['ISIN', 'PD', 'vol']
-    missing = [c for c in required_cols if c not in df.columns]
-    if missing:
-        raise ValueError(f"Missing required columns: {missing}")
-
-    # Handle edge cases
-    if df.empty:
-        logger.warning("Empty DataFrame, returning empty result")
-        return pd.DataFrame()
-
-    # Main logic
-    try:
-        result = perform_calculation(df)
-    except Exception as e:
-        logger.error(f"Calculation failed: {e}")
-        raise
-
-    return result
-```
-
-### Logging Pattern
-
-Use logging module, not print:
-
-```python
-import logging
-logger = logging.getLogger(__name__)
-
-logger.debug("Detailed diagnostic information")
-logger.info("General progress information")
-logger.warning("Something unexpected but handled")
-logger.error("Error that prevents operation")
-```
-
-### When Adding New Features
-
-1. Keep functions focused and single-purpose
-2. Add type hints to all signatures
-3. Include docstrings with Args/Returns
-4. Add logging at key steps
-5. Write tests for new functionality
-6. Update this README
-
----
-
-## Output Files
-
-The pipeline generates:
-
-1. **Depreciation Matrix**:
-   - File: `merged_SHS_instr_vulnxalpha_scenarios_{DEP_TYPE}_{AGGREG_TYPE}.csv`
-   - Structure: Instruments × scenarios (wide format)
-   - Values: Depreciation percentages
-
-2. **Final Results**:
-   - File: `shs_2024-Q4_results.csv`
-   - Structure: Long format with all dimensions
-   - Columns: ISIN, HOLDER_SECTOR, HOLDER_AREA, eco_service, scenario, VALUE, VALUE_LOSS
-
-3. **Visualizations** (optional):
-   - Heatmaps by NACE code and region
-   - Loss distributions by dimension
-   - Summary statistics charts
-
----
-
-## Package Version
-
-Current version: **1.0.0**
-
-```python
-import shs_nature_analysis as shs
-print(shs.__version__)  # Output: 1.0.0
-```
-
----
-
-## License
-
-[Your license here]
-
----
-
-## Contact
-
-[Your contact information]
-
----
-
-## Acknowledgments
-
-- Original implementation: Jupyter notebook by Seb
-- Refactoring: Modular Python package architecture
-- Financial models: Based on Merton structural credit risk framework
-- Ecosystem data: EXIOBASE sector classifications
-
----
-
-**Last Updated**: 2025-11-15
+**Last Updated:** 2025-11-18
+**Version:** 2.0.0

@@ -5,9 +5,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from .shs_main_pipeline import SHSAnalysisPipeline
-from . import shs_config as config
-from . import shs_visualization as visualization
+from nature_analysis import AnalysisPipeline
+from nature_analysis import config
+from nature_analysis import visualization
 
 
 def example_1_full_pipeline():
@@ -18,7 +18,7 @@ def example_1_full_pipeline():
     print("EXAMPLE 1: Complete Pipeline")
     print("="*60)
     
-    pipeline = SHSAnalysisPipeline()
+    pipeline = AnalysisPipeline()
     results = pipeline.run_full_pipeline(create_plots=True)
     
     print(f"\nResults shape: {results.shape}")
@@ -42,7 +42,7 @@ def example_2_custom_scenarios():
     config.ECO_SERVICES = ['Water flow regulation', 'Pollination']
     
     try:
-        pipeline = SHSAnalysisPipeline()
+        pipeline = AnalysisPipeline()
         pipeline.load_all_data()
         
         print(f"\nAnalyzing {len(config.ECO_SERVICES)} ecosystem services:")
@@ -122,7 +122,7 @@ def example_4_sensitivity_analysis():
         config.AGGREG_TYPE = aggreg_type
         
         try:
-            pipeline = SHSAnalysisPipeline()
+            pipeline = AnalysisPipeline()
             pipeline.load_all_data()
             depreciation_df = pipeline.calculate_instrument_depreciations()
             
