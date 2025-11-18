@@ -2,13 +2,10 @@
 """
 Example script demonstrating package usage
 
-NOTE: Before running this script, you need to either:
-1. Rename the directory from 'shs-nature-analysis' to 'shs_nature_analysis'
-2. Add the parent directory to your PYTHONPATH
-3. Create a symbolic link: ln -s shs-nature-analysis shs_nature_analysis
-
-This script assumes you have the required dependencies installed:
+NOTE: To use this package, ensure you have the required dependencies:
     pip install pandas numpy scipy matplotlib seaborn joblib openpyxl
+
+The package is now organized as 'nature_analysis'.
 """
 
 def example_1_simple_usage():
@@ -16,10 +13,10 @@ def example_1_simple_usage():
     print("Example 1: Simple Usage")
     print("=" * 60)
 
-    import shs_nature_analysis as shs
+    import nature_analysis
 
     # One-line execution
-    results = shs.run_pipeline()
+    results = nature_analysis.run_pipeline()
 
     print(f"Analysis complete! Results shape: {results.shape}")
     print("\nFirst few rows:")
@@ -31,9 +28,9 @@ def example_2_class_usage():
     print("\nExample 2: Class Usage")
     print("=" * 60)
 
-    from shs_nature_analysis import SHSAnalysisPipeline
+    from nature_analysis import AnalysisPipeline
 
-    pipeline = SHSAnalysisPipeline()
+    pipeline = AnalysisPipeline()
     results = pipeline.run_full_pipeline(create_plots=True)
 
     print(f"Analysis complete! Results shape: {results.shape}")
@@ -44,15 +41,15 @@ def example_3_step_by_step():
     print("\nExample 3: Step-by-Step Execution")
     print("=" * 60)
 
-    from shs_nature_analysis import SHSAnalysisPipeline
+    from nature_analysis import AnalysisPipeline
 
-    pipeline = SHSAnalysisPipeline()
+    pipeline = AnalysisPipeline()
 
     # Step 1: Load data
     print("Loading data...")
     pipeline.load_all_data()
-    print(f"  - Loaded {len(pipeline.instrument_df)} instruments")
-    print(f"  - Loaded {len(pipeline.vulnerability_df)} vulnerability records")
+    print(f"  - Loaded {len(pipeline.instrmnt_df)} instruments")
+    print(f"  - Loaded {len(pipeline.vuln_df)} vulnerability records")
 
     # Step 2: Calculate depreciations
     print("\nCalculating depreciations...")
@@ -75,7 +72,7 @@ def example_4_module_access():
     print("\nExample 4: Module Access")
     print("=" * 60)
 
-    from shs_nature_analysis import config, financial, visualization
+    from nature_analysis import config, financial, visualization
 
     # Access configuration
     print(f"Risk-free rate: {config.RISK_FREE_RATE}")
@@ -99,13 +96,13 @@ def example_5_custom_analysis():
     print("\nExample 5: Custom Analysis")
     print("=" * 60)
 
-    from shs_nature_analysis import (
-        SHSAnalysisPipeline,
+    from nature_analysis import (
+        AnalysisPipeline,
         vulnerability,
         config
     )
 
-    pipeline = SHSAnalysisPipeline()
+    pipeline = AnalysisPipeline()
     pipeline.load_all_data()
 
     # Analyze a specific scenario
@@ -116,10 +113,10 @@ def example_5_custom_analysis():
 
     # Calculate depreciation for this specific case
     dep_df = vulnerability.calculate_depreciation(
-        vuln_df=pipeline.vulnerability_df,
-        instrmnt_df=pipeline.instrument_df,
+        vuln_df=pipeline.vuln_df,
+        instrmnt_df=pipeline.instrmnt_df,
         alpha_df=pipeline.alpha_df,
-        nace_map_df=pipeline.nace_map_df,
+        nace_map_df=pipeline.nace_map,
         eco_service=eco_service,
         scenario=scenario,
         dep_type=config.DEPENDENCY_TYPE,
@@ -142,8 +139,8 @@ if __name__ == "__main__":
 
     try:
         # Try to import the package
-        import shs_nature_analysis
-        print(f"✓ Package imported successfully (version {shs_nature_analysis.__version__})")
+        import nature_analysis
+        print(f"✓ Package imported successfully (version {nature_analysis.__version__})")
         print("\nChoose an example to run:")
         print("1. Simple usage")
         print("2. Class usage")
@@ -153,8 +150,6 @@ if __name__ == "__main__":
 
     except ImportError as e:
         print(f"✗ Cannot import package: {e}")
-        print("\nTo fix this, try one of the following:")
-        print("1. Rename directory: mv shs-nature-analysis shs_nature_analysis")
-        print("2. Create symlink: ln -s shs-nature-analysis shs_nature_analysis")
-        print("3. Add to PYTHONPATH: export PYTHONPATH=/path/to/parent:$PYTHONPATH")
+        print("\nPlease ensure the package is properly installed.")
+        print("From the repository root, run: pip install -e .")
         sys.exit(1)

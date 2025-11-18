@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.ticker import FuncFormatter
 from typing import Optional, Tuple
-from . import shs_config as config
+from . import config
 
 
 def create_heatmap(data: pd.DataFrame,

@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import Tuple, List
-from . import shs_config as config
+from . import config
 
 
 def load_instrument_data(file_path: str = config.INSTRUMENT_FILE) -> pd.DataFrame:
