@@ -8,27 +8,13 @@ from typing import Tuple, List
 from . import config
 
 
-def load_instrument_data(file_path: str = config.INSTRUMENT_FILE) -> pd.DataFrame:
+def load_SHS_data(file_path: str = config.SHS_INSTRUMENT_FILE) -> pd.DataFrame:
     """Load SHS instrument data with proper dtype specification."""
     return pd.read_csv(file_path, dtype={'nace': 'str'})
 
-
-def load_anacredit_instrument_data(file_path: str = config.ANACREDIT_INSTRUMENT_FILE) -> pd.DataFrame:
-    """
-    Load AnaCredit instrument data with proper dtype specification.
-
-    AnaCredit data is expected to have the same structure as SHS instrument data,
-    including the same columns (PERIOD, IDENTIFIER, INSTR_CLASS, ISSUER_COUNTRY,
-    ISSUER_SECTOR, pd, vol, debt_ratio, nace, nace_lvl*, resid_mat_yr, etc.).
-
-    Args:
-        file_path: Path to AnaCredit instrument CSV file
-
-    Returns:
-        DataFrame with AnaCredit instrument data
-    """
+def load_Anacredit_data(file_path: str = config.ANACREDIT_INSTRUMENT_FILE) -> pd.DataFrame:
+    """Load SHS instrument data with proper dtype specification."""
     return pd.read_csv(file_path, dtype={'nace': 'str'})
-
 
 def load_vulnerability_data(file_path: Path = None) -> pd.DataFrame:
     """Load and reshape vulnerability/dependency score data."""

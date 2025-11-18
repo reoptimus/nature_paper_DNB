@@ -97,12 +97,13 @@ def example_5_custom_analysis():
     print("=" * 60)
 
     from nature_analysis import (
-        AnalysisPipeline,
+        pipeline,
         vulnerability,
         config
     )
 
-    pipeline = AnalysisPipeline()
+    from nature_analysis.pipeline import SHSAnalysisPipeline
+    pipeline = SHSAnalysisPipeline()
     pipeline.load_all_data()
     # pipeline.SHS_instrmnt_df
     #  pipeline.Anacredit_instrmnt_df

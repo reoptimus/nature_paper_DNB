@@ -12,7 +12,7 @@ RESULTS_PATH = Path('./results')
 
 # Input files in secured environment
 # SHS instrument data
-INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/SHS/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
+SHS_INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/SHS/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
 # AnaCredit instrument data
 ANACREDIT_INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/anacredit_NL/anacredit_instrmnt_nature_prepped.csv'
 VULN_FILE = 'Vuln_final_03_11_2025.csv'
