@@ -19,6 +19,7 @@ __author__ = 'Nature Analysis Team'
 
 # Import main components for easy access
 from .pipeline import SHSAnalysisPipeline as AnalysisPipeline
+from .pipeline import AnaCreditAnalysisPipeline
 from . import config
 from . import data_loader
 from . import vulnerability
@@ -72,7 +73,7 @@ def run_pipeline(create_plots=True, **kwargs):
 
 def run_quick_test(n_instruments=100):
     """
-    Run a quick test of the pipeline with limited data.
+    Run a quick test of the SHS pipeline with limited data.
 
     This is a lightweight version designed for fast testing and demonstration.
     Uses only:
@@ -102,11 +103,76 @@ def run_quick_test(n_instruments=100):
     return pipeline.run_quick_test(n_instruments=n_instruments)
 
 
+def run_anacredit_pipeline(create_plots=False, **kwargs):
+    """
+    Run the complete AnaCredit nature-based financial risk analysis pipeline.
+
+    This convenience function creates an AnaCredit pipeline instance and runs
+    the full analysis workflow for AnaCredit instrument data.
+
+    Args:
+        create_plots (bool): Whether to generate visualization plots. Default: False
+        **kwargs: Additional keyword arguments (reserved for future use)
+
+    Returns:
+        pd.DataFrame: Results dataframe with financial impacts including:
+                     - Depreciation values
+                     - PD (Probability of Default) changes
+                     - LGD (Loss Given Default)
+                     - Price variations
+
+    Example:
+        >>> import nature_analysis
+        >>> results = nature_analysis.run_anacredit_pipeline()
+        >>> print(f"Processed {len(results)} instrument-scenario combinations")
+
+    Raises:
+        FileNotFoundError: If required data files are not found (check config.py)
+        ValueError: If data validation fails
+    """
+    pipeline = AnaCreditAnalysisPipeline()
+    return pipeline.run_full_pipeline(create_plots=create_plots)
+
+
+def run_anacredit_quick_test(n_instruments=100):
+    """
+    Run a quick test of the AnaCredit pipeline with limited data.
+
+    This is a lightweight version designed for fast testing and demonstration.
+    Uses only:
+    - First n_instruments instruments (default: 100)
+    - First scenario
+    - First ecosystem service
+
+    Args:
+        n_instruments (int): Number of instruments to process (default: 100)
+
+    Returns:
+        pd.DataFrame: Depreciation results for the limited scenario
+
+    Example:
+        >>> import nature_analysis
+        >>> results = nature_analysis.run_anacredit_quick_test(n_instruments=50)
+        >>> print(f"AnaCredit quick test complete! Processed {len(results)} instruments")
+
+    Note:
+        This function is much faster than run_anacredit_pipeline() and is ideal for:
+        - Testing the AnaCredit data integration
+        - Demonstrating the workflow
+        - Quick validation during development
+    """
+    pipeline = AnaCreditAnalysisPipeline()
+    return pipeline.run_quick_test(n_instruments=n_instruments)
+
+
 # Define what gets imported with "from nature_analysis import *"
 __all__ = [
     'AnalysisPipeline',
+    'AnaCreditAnalysisPipeline',
     'run_pipeline',
     'run_quick_test',
+    'run_anacredit_pipeline',
+    'run_anacredit_quick_test',
     'config',
     'data_loader',
     'vulnerability',
