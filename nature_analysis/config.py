@@ -17,7 +17,7 @@ ALPHA_FILE = 'Alpha_final_03_11_2025.xlsx'
 X_FILE = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi/x.csv'
 NACE_MAP_FILE = DATA_PATH / 'nace_0d_map.xlsx'
 EXIOBASE_NACE_MAP = DATA_PATH / 'EXIOBASE_to_NACElvl2_tab.xlsx'
-AREA_MAP_FILE = Path('./data/regions_ISO2_continent_area.csv')
+AREA_MAP_FILE = DATA_PATH / 'regions_ISO2_continent_area.csv'
 SHS_HOLDER_FILE = 'H:/Documents/SHS/prepped/F_511_31_32_hldr_instrmnt_2024-Q4_prepped.csv'
 
 # Analysis parameters
