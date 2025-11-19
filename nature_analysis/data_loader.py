@@ -10,11 +10,30 @@ from . import config
 
 def load_SHS_data(file_path: str = config.SHS_INSTRUMENT_FILE) -> pd.DataFrame:
     """Load SHS instrument data with proper dtype specification."""
-    return pd.read_csv(file_path, dtype={'nace': 'str'})
+    SHS_instrmnt = pd.read_csv(file_path, dtype={'nace': 'str'})
+    # to be delteted just for coding test purpose
+    SHS_instrmnt = SHS_instrmnt[1:500]
+    return SHS_instrmnt
 
 def load_Anacredit_data(file_path: str = config.ANACREDIT_INSTRUMENT_FILE) -> pd.DataFrame:
     """Load SHS instrument data with proper dtype specification."""
-    return pd.read_csv(file_path, dtype={'nace': 'str'})
+    anacredit_instrmnt = pd.read_csv(file_path, dtype={'nace': 'str'})
+    # anacredit_instrmnt = pd.read_csv(config.ANACREDIT_INSTRUMENT_FILE)
+    # add INSTR_CLASS , vol and debt_ratio to be coherent with SHS data frame
+    # INSTR_CLASS
+    anacredit_instrmnt['INSTR_CLASS'] = 'Loan_Anacredit'
+    # vol
+    volatilities_lvl2 = pd.read_excel( config.VOL_FILE )
+    volatilities_lvl2['vol'] = volatilities_lvl2['vol']/100
+    anacredit_instrmnt = anacredit_instrmnt.merge(volatilities_lvl2, left_on= 'nace_level_2', right_on = 'nace_lvl2', how = 'left' , validate='m:1' )
+    anacredit_instrmnt = anacredit_instrmnt.drop(columns=['nace_lvl2'])
+    # debt_ratio
+    debt_ratio_lvl2 = pd.read_excel( config.DEBT_RATIO_FILE )
+    anacredit_instrmnt = anacredit_instrmnt.merge(debt_ratio_lvl2, left_on= 'nace_level_2', right_on = 'nace_lvl2', how = 'left' , validate='m:1')
+    anacredit_instrmnt = anacredit_instrmnt.drop(columns=['nace_lvl2'])
+    # to be delteted just for coding test purpose
+    anacredit_instrmnt = anacredit_instrmnt[1:500]
+    return anacredit_instrmnt
 
 def load_vulnerability_data(file_path: Path = None) -> pd.DataFrame:
     """Load and reshape vulnerability/dependency score data."""

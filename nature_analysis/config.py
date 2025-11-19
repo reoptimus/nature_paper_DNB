@@ -8,20 +8,30 @@ BASE_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv
 DATA_PATH = BASE_PATH / 'git_repo/nature_paper_DNB/data'
 VULN_PATH = BASE_PATH / 'DS_Vuln_update/Vuln_final_store'
 ANALYSIS_PATH = BASE_PATH / 'analysis/output_data'
-RESULTS_PATH = Path('./results')
 
 # Input files in secured environment
 # SHS instrument data
-SHS_INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/SHS/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
+SECURED_DRIVE_PATH = Path('G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/')
+SHS_INSTRUMENT_FILE = SECURED_DRIVE_PATH / 'SHS/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
+SHS_HOLDER_FILE = SECURED_DRIVE_PATH / 'SHS/F_511_31_32_hldr_instrmnt_2024-Q4_prepped.csv'
 # AnaCredit instrument data
-ANACREDIT_INSTRUMENT_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/anacredit_NL/anacredit_df_2024-12-31.csv'
+ANACREDIT_INSTRUMENT_FILE = SECURED_DRIVE_PATH / 'anacredit_NL/anacredit_df_2024-12-31.csv'
+# results (also in secured env.)
+RESULTS_PATH = SECURED_DRIVE_PATH / 'results/'
+
+# file calculated based on ENCORE and EXIOBASE
 VULN_FILE = 'Vuln_final_03_11_2025.csv'
 ALPHA_FILE = 'Alpha_final_03_11_2025.xlsx'
 X_FILE = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi/x.csv'
+
+# sector and country correspondance mapping
 NACE_MAP_FILE = DATA_PATH / 'nace_0d_map.xlsx'
 EXIOBASE_NACE_MAP = DATA_PATH / 'EXIOBASE_to_NACElvl2_tab.xlsx'
 AREA_MAP_FILE = DATA_PATH / 'regions_ISO2_continent_area.csv'
-SHS_HOLDER_FILE = 'H:/Documents/SHS/prepped/F_511_31_32_hldr_instrmnt_2024-Q4_prepped.csv'
+
+# extra info on equity price volatility and debt_ratio per sector nace lvl2
+VOL_FILE = DATA_PATH / 'volatility_per_nace_lvl2.xlsx'
+DEBT_RATIO_FILE = DATA_PATH / 'Debt_ratio_per_nace_lvl2.xlsx'
 
 # Analysis parameters
 AGGREG_TYPE = 'SR'  # or 'max'

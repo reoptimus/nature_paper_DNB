@@ -91,56 +91,37 @@ def example_4_module_access():
         print(f"  - {func}")
 
 
-def example_5_custom_analysis():
+def example_5_depreciation_calculation():
     """Custom analysis workflow."""
-    print("\nExample 5: Custom Analysis")
+    print("\nExample 5: Depreciation calculation and write")
     print("=" * 60)
 
     from nature_analysis import (
         pipeline,
         vulnerability,
-        config
+        config,
+        data_loader
     )
 
     from nature_analysis.pipeline import SHSAnalysisPipeline
     pipeline_SHS = SHSAnalysisPipeline()
     pipeline_SHS.load_all_data()
     pipeline_SHS.instrmnt_df
+    # Calculate depreciation for this specific case
+    SHS_dep_df = pipeline_SHS.calculate_instrument_depreciations()
 
     from nature_analysis.pipeline import AnaCreditAnalysisPipeline
     pipeline_anacredit = AnaCreditAnalysisPipeline()
     pipeline_anacredit.load_all_data()
-    pipeline_anacredit.instrmnt_df
-
-
-    # Analyze a specific scenario
-    eco_service = 'Water flow regulation'
-    scenario = '1_World_shock_10perc_02_GOVonNFC'
-
-    print(f"Analyzing: {eco_service} / {scenario}")
-
+    pipeline_anacredit.instrmnt_df.columns
     # Calculate depreciation for this specific case
-    dep_df = vulnerability.calculate_depreciation(
-        vuln_df=pipeline.vuln_df,
-        instrmnt_df=pipeline.instrmnt_df,
-        alpha_df=pipeline.alpha_df,
-        nace_map_df=pipeline.nace_map,
-        eco_service=eco_service,
-        scenario=scenario,
-        dep_type=config.DEPENDENCY_TYPE,
-        aggreg_type=config.AGGREG_TYPE,
-        nace_level=2
-    )
-
-    print(f"Depreciation results shape: {dep_df.shape}")
-    print(f"Mean depreciation: {dep_df['Depreciation'].mean():.6f}")
-    print(f"Max depreciation: {dep_df['Depreciation'].max():.6f}")
+    Anacred_dep_df = pipeline_anacredit.calculate_instrument_depreciations()
 
 
 if __name__ == "__main__":
     import sys
 
-    print("SHS Nature Analysis Package - Usage Examples")
+    print("Nature Analysis Package - Usage Examples")
     print("=" * 60)
     print("\nNOTE: This requires renaming the directory or setting up PYTHONPATH")
     print("See script header for details.\n")

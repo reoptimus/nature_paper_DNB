@@ -385,6 +385,10 @@ class AnaCreditAnalysisPipeline:
 
         logger.info("Loading AnaCredit instrument data...")
         self.instrmnt_df = data_loader.load_Anacredit_data()
+        # rename of columns for better correspondance between SHS and AnaCredit code
+        
+        list_names_col = ['PERIOD','Credtr_IDENTIFIER', 'Dbtr_IDENTIFIER','ISSUER_SECTOR','nace_lvl4','ISSUER_COUNTRY','pd' , 'IDENTIFIER_B' , 'IDENTIFIER' , 'to_delete1' , 'to_delete2' , 'incept_AMOUNT' , 'OUTSTANDING_AMOUNT' , 'Credtr_SECTOR', 'nace_lvl2','INSTR_CLASS','vol' , 'debt_ratio']
+        self.instrmnt_df.columns = list_names_col
 
         logger.info("Loading vulnerability data...")
         self.vuln_df = data_loader.load_vulnerability_data()
@@ -469,7 +473,7 @@ class AnaCreditAnalysisPipeline:
         # Combine with instrument metadata
         final_df = pd.concat([
             instrmnt_subset[['PERIOD', 'IDENTIFIER', 'INSTR_CLASS',
-                            'ISSUER_COUNTRY', 'nace_lvl1', 'nace_lvl3']],
+                            'ISSUER_COUNTRY', 'nace_lvl2','nace_lvl4']],
             depreciation_df
         ], axis=1)
 
