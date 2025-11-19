@@ -6,7 +6,8 @@ from pathlib import Path
 # File paths
 BASE_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv/OS-2025')
 DATA_PATH = BASE_PATH / 'git_repo/nature_paper_DNB/data'
-VULN_PATH = BASE_PATH / 'DS_Vuln_update/Vuln_final_store'
+VULN_config_PATH = BASE_PATH / 'DS_Vuln_update/config_store'
+VULN_final_PATH = BASE_PATH / 'DS_Vuln_update/Vuln_final_store'
 ANALYSIS_PATH = BASE_PATH / 'analysis/output_data'
 
 # Input files in secured environment

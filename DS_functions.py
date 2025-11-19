@@ -7,6 +7,30 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
+"""
+DS and Vulnarabilities generation of files for NAture paper
+based on last update of ENCORE and EXIOBASE
+
+@author: DNB FS-IFA NC5452 (sebastien gallet)
+"""
+
+VULN_config_PATH = BASE_PATH / 'DS_Vuln_update/config_store'
+VULN_final_PATH = BASE_PATH / 'DS_Vuln_update/Vuln_final_store'
+
+import importlib
+import time
+import DS_functions as funct
+importlib.reload(funct)
+
+start = time.time()
+funct.global_run(path_DS_store)
+end = time.time()
+print(f"Execution time: {end - start:.4f} seconds")
+
+import gc
+gc.collect()
+## end
+
 # load functions used to clean, merun and write DS and vulnerabilities values per country/sector/ecosystem services
 def ND_GAIN_Tab_generator(Nature_indice_path, path_ISO):
     # Example: path_ISO = "I:\\...\\Misc_tables\\"
