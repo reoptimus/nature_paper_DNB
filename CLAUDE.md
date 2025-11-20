@@ -94,6 +94,250 @@ When modifying code, consider:
 
 ---
 
+## Vulnerability Data Generation (Optional Workflow)
+
+### Overview
+
+The package uses **vulnerability scores** and **alpha shock parameters** that quantify how ecosystem service disruptions affect economic sectors by country. These files (`Vuln_final.csv` and `Alpha_final.xlsx`) are **pre-generated and stored** in the data directory.
+
+**You typically DON'T need to regenerate these files** unless:
+- Updating ENCORE ecosystem service dependency ratings
+- New EXIOBASE multi-regional input-output data is available
+- Modifying scenario configurations or shock parameters
+- Conducting custom sensitivity analyses
+
+### Two Workflows
+
+| Workflow | When to Use | Time Required | Files Used |
+|----------|-------------|---------------|------------|
+| **Standard** (Recommended) | Regular analysis | Minutes | Pre-generated Vuln/Alpha files |
+| **Regeneration** (Optional) | Updating vulnerability data | 10-30 minutes | ENCORE, EXIOBASE, ND-GAIN raw data |
+
+### Vulnerability Generation Module
+
+The `vulnerability_generator.py` module creates vulnerability files from:
+
+**Input Data Sources:**
+1. **ENCORE** (Exploring Natural Capital Opportunities, Risks and Exposure)
+   - Qualitative ratings of sector dependencies on ecosystem services
+   - Example: Agriculture has "Very High" dependency on pollination
+
+2. **EXIOBASE** (Multi-Regional Input-Output Database)
+   - A matrix: Technical coefficients (sector inputs per unit output)
+   - Z matrix: Inter-industry transactions
+   - X vector: Total output per sector-country
+
+3. **ND-GAIN** (Notre Dame Global Adaptation Initiative)
+   - Country-level vulnerability indices for:
+     - Ecosystems
+     - Water resources
+     - Habitat quality
+     - Food security
+
+**Process Flow:**
+```
+ENCORE Data → Load and clean dependency ratings → ISIC codes
+                                                      ↓
+                                              Map to NACE codes
+                                                      ↓
+EXIOBASE Data → Build Leontief inverse (L-I) → Calculate indirect dependencies
+        ↓                                             ↓
+Calculate SR (subcontracting ratio)          DS_direct × (L-I) = DS_indirect
+                                                      ↓
+ND-GAIN Data → PCA clustering of ES → Match to nature indices
+        ↓                                             ↓
+Apply nature degradation indices → Vuln = DS × Nature_Index
+                                                      ↓
+                                    Calculate for government/financial sectors
+                                                      ↓
+                            Output: Vuln_final.csv + Alpha_final.xlsx
+```
+
+**Key Calculations:**
+
+1. **Direct Dependencies (DS_direct)**
+   - From ENCORE: How directly a sector depends on an ecosystem service
+   - Mapped from ISIC codes to EXIOBASE sectors
+
+2. **Indirect Dependencies (DS_indirect)**
+   - Calculated using Leontief inverse: `DS_indirect = DS_direct × (L-I)`
+   - Captures supply chain dependencies
+
+3. **Total Dependencies (DS_total)**
+   - Option 1 (SR-weighted): `DS_total_SR = DS_indirect × SR + DS_direct × (1-SR)`
+   - Option 2 (Max): `DS_total_max = max(DS_indirect, DS_direct)`
+
+4. **Vulnerabilities (Vuln)**
+   - `Vuln = DS × Nature_Degradation_Index`
+   - Nature indices matched to ecosystem services via PCA clustering
+
+5. **Alpha Shock Parameters**
+   - `Alpha = Production_Shock / Weighted_Average_Vuln`
+   - Converts vulnerability scores to scenario shock magnitudes
+
+**Special Sector Handling:**
+
+- **Government sector**: Calculated as production-weighted average of all sectors
+- **Financial sector**: Calculated as asset-weighted average of non-financial sectors
+  - Reflects indirect exposure through loan/investment portfolios
+
+### How to Regenerate Vulnerability Files
+
+**Method 1: Using the convenience function**
+```python
+import nature_analysis
+
+# Regenerate from scratch (10-30 minutes)
+shapes = nature_analysis.regenerate_vulnerability_files()
+
+print(f"Generated Alpha file: {shapes['alpha']}")
+print(f"Generated Vuln file: {shapes['vuln']}")
+```
+
+**Method 2: Using the example script**
+```bash
+python examples/vulnerability_generation.py
+```
+
+**Method 3: Direct module usage**
+```python
+from nature_analysis import vulnerability_generator
+from pathlib import Path
+
+# Run full generation workflow
+path_ds_store = Path('data/DS_Vuln_update/')
+shapes = vulnerability_generator.run_full_vulnerability_generation(path_ds_store)
+```
+
+### Configuration Requirements
+
+To regenerate vulnerability files, ensure these parameters are set in `config.py`:
+
+```python
+# ENCORE data
+ENCORE_FILE = BASE_PATH / 'downloaded_data/ENCORE/06. Dependency mat ratings.csv'
+ENCORE_RATING_MAPPING = {'Very High': 4, 'High': 3, 'Medium': 2, 'Low': 1}
+
+# EXIOBASE data
+EXIOBASE_A_MATRIX = EXIOBASE_PATH / 'A.csv'
+EXIOBASE_Z_MATRIX = EXIOBASE_PATH / 'Z.csv'
+EXIOBASE_X_VECTOR = EXIOBASE_PATH / 'x.csv'
+
+# ND-GAIN data
+ND_GAIN_PATH = BASE_PATH / 'downloaded_data/ND-GAIN index/resources/vulnerability'
+
+# Configuration files directory
+VULN_config_PATH = BASE_PATH / 'DS_Vuln_update/config_store'
+```
+
+**Configuration Files:**
+Place scenario configuration files in `DS_Vuln_update/config_store/`:
+- `config_0_World_shock_10perc.py`
+- `config_1_EUshock_15perc.py`
+- etc.
+
+Each configuration file specifies:
+- Shock magnitudes per region
+- Country-to-area mappings
+- Sector adjustment flags
+
+### Vulnerability Generator Module Functions
+
+Key functions in `vulnerability_generator.py`:
+
+**Data Loading:**
+- `load_nd_gain_data()` - Load ND-GAIN vulnerability indices
+- `load_and_clean_encore()` - Load ENCORE dependency ratings
+- `create_isic_nace_mapping()` - Map ISIC to NACE codes
+
+**Matrix Calculations:**
+- `build_leontief_matrix()` - Compute Leontief inverse (L-I)
+- `calculate_subcontracting_ratio()` - Calculate SR per sector
+
+**Analysis:**
+- `perform_pca_clustering()` - Cluster ecosystem services for nature index matching
+- `merge_public_admin_vulnerability()` - Calculate government sector exposure
+- `merge_financial_vulnerability()` - Calculate financial sector exposure
+
+**Orchestration:**
+- `generate_ds_file()` - Generate vulnerability file for one scenario
+- `reshape_and_merge_ds_files()` - Merge all scenarios into final files
+- `run_full_vulnerability_generation()` - Complete workflow for all scenarios
+- `regenerate_vulnerability_files()` - Convenience function for package users
+
+### Output Files
+
+**Vuln_final.csv structure:**
+```
+region, EXIOBASE, eco_serv, indout, NACE Code, Adj_ind,
+0_World_shock_10perc_DS_total_SR, 0_World_shock_10perc_DS_total_max,
+0_World_shock_10perc_Vuln_total_SR, 0_World_shock_10perc_Vuln_total_max,
+1_EUshock_15perc_DS_total_SR, ...
+```
+
+**Alpha_final.xlsx structure:**
+```
+Area, eco_serv,
+0_World_shock_10perc_DS_total_SR_alpha, 0_World_shock_10perc_DS_total_max_alpha,
+0_World_shock_10perc_Vuln_total_SR_alpha, 0_World_shock_10perc_Vuln_total_max_alpha,
+1_EUshock_15perc_DS_total_SR_alpha, ...
+```
+
+### Standard Workflow (Using Pre-Generated Files)
+
+**This is the recommended approach:**
+
+```python
+# Load pre-generated vulnerability data
+from nature_analysis import AnalysisPipeline
+
+pipeline = AnalysisPipeline()
+pipeline.load_all_data()  # Loads Vuln_final.csv and Alpha_final.xlsx
+
+# Calculate depreciation using stored vulnerabilities
+depreciation_df = pipeline.calculate_instrument_depreciations()
+
+# Apply financial models
+impact_df = pipeline.calculate_financial_impacts(depreciation_df)
+
+# Aggregate results
+results = pipeline.calculate_shs_losses(impact_df)
+```
+
+See `examples/using_stored_vulnerabilities.py` for complete example.
+
+### Key Differences: Standard vs. Regeneration Workflow
+
+| Aspect | Standard Workflow | Regeneration Workflow |
+|--------|-------------------|----------------------|
+| **Input** | Vuln_final.csv, Alpha_final.xlsx | ENCORE, EXIOBASE, ND-GAIN raw data |
+| **Time** | Minutes | 10-30 minutes |
+| **Frequency** | Every analysis | Rarely (only when updating data) |
+| **Output** | Portfolio losses | Vulnerability files |
+| **Module** | `pipeline.py`, `vulnerability.py` | `vulnerability_generator.py` |
+| **Example** | `using_stored_vulnerabilities.py` | `vulnerability_generation.py` |
+
+### When to Regenerate
+
+✅ **DO regenerate** when:
+- New ENCORE data is released
+- EXIOBASE updates to a new year
+- ND-GAIN indices are updated
+- Adding new scenario configurations
+- Modifying shock parameters
+- Changing government/financial sector calculation methods
+
+❌ **DON'T regenerate** for:
+- Regular portfolio analysis
+- Different instrument datasets (SHS vs AnaCredit)
+- Different holder data
+- Visualization changes
+- Financial model parameter adjustments
+
+The vulnerability scores are **scenario-specific** but **instrument-agnostic**. They describe sector-country-ecosystem service relationships, not individual securities.
+
+---
+
 ## Architecture Overview
 
 ### Data Flow
@@ -140,8 +384,9 @@ Financial Impacts CSV (by instrument, ecosystem service, scenario)
 
 | Module | Primary Purpose | Key Outputs |
 |--------|----------------|-------------|
-| `config.py` | Centralized parameters | Constants, paths (SHS & AnaCredit), settings |
+| `config.py` | Centralized parameters | Constants, paths (SHS & AnaCredit), settings, vulnerability generation params |
 | `data_loader.py` | Load and preprocess data | DataFrames (SHS/AnaCredit instruments, vulnerability, alpha, holders) |
+| `vulnerability_generator.py` | **[Optional]** Generate vulnerability files | Vuln_final.csv, Alpha_final.xlsx from ENCORE/EXIOBASE/ND-GAIN |
 | `vulnerability.py` | Calculate depreciations | Depreciation matrix (instruments × scenarios) |
 | `financial.py` | Financial modeling | PD, LGD, bond prices, equity prices |
 | `pipeline.py` | Orchestration | Two pipeline classes (SHSAnalysisPipeline, AnaCreditAnalysisPipeline) |
