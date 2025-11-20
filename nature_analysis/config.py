@@ -11,6 +11,7 @@ VULN_final_PATH = BASE_PATH / 'DS_Vuln_update/Vuln_final_store'
 VULN_PATH = VULN_final_PATH  # Alias for backwards compatibility
 ANALYSIS_PATH = BASE_PATH / 'analysis/output_data'
 
+####################################
 # Input files in secured environment
 # SHS instrument data
 SECURED_DRIVE_PATH = Path('G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/')
@@ -18,8 +19,13 @@ SHS_INSTRUMENT_FILE = SECURED_DRIVE_PATH / 'SHS/F_511_31_32_instrmnt_nature_2024
 SHS_HOLDER_FILE = SECURED_DRIVE_PATH / 'SHS/F_511_31_32_hldr_instrmnt_2024-Q4_prepped.csv'
 # AnaCredit instrument data
 ANACREDIT_INSTRUMENT_FILE = SECURED_DRIVE_PATH / 'anacredit_NL/anacredit_df_2024-12-31.csv'
+# COREP
+COREP_FILE = SECURED_DRIVE_PATH / 'COREP/RWA_20241231.csv'
+# ARS Solvency 2
+S2_ARS_FILE = SECURED_DRIVE_PATH / 'ARS_solva2/S2ARS_S02_01_31122024.csv'
 # results (also in secured env.)
 RESULTS_PATH = SECURED_DRIVE_PATH / 'results/'
+###################################
 
 # File calculated based on ENCORE and EXIOBASE (used by main pipeline)
 # These are the OUTPUT files from vulnerability generation
