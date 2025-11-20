@@ -41,13 +41,6 @@ X_FILE = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi/x.csv
 # Input data sources for vulnerability generation
 # ENCORE: Ecosystem service dependency ratings
 ENCORE_FILE = BASE_PATH / 'downloaded_data/ENCORE/06. Dependency mat ratings.csv'
-ENCORE_RATING_MAPPING = {
-    'Very High': 4,
-    'High': 3,
-    'Medium': 2,
-    'Low': 1,
-    'Very Low': 0.5
-}
 
 # EXIOBASE: Multi-regional input-output data
 EXIOBASE_PATH = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi'
@@ -58,8 +51,8 @@ EXIOBASE_X_VECTOR = EXIOBASE_PATH / 'x.csv'
 # ISIC to NACE mapping
 ISIC_NACE_MAPPING = BASE_PATH / 'downloaded_data/ENCORE/14. EXIOBASE NACE ISIC crosswalk.csv'
 
-# ND-GAIN: Nature degradation vulnerability indices
-ND_GAIN_PATH = BASE_PATH / 'downloaded_data/Nature degradation/ND_GAIN index/vulnerability'
+# Nature Index: Nature degradation vulnerability indices
+NATURE_INDEX_PATH = BASE_PATH / 'downloaded_data/Nature degradation/ND_GAIN index/vulnerability'
 ISO_CODES_PATH = BASE_PATH / 'downloaded_data/Misc_tables'
 
 # Additional vulnerability generation parameters
