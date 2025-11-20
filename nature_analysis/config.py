@@ -53,7 +53,7 @@ EXIOBASE_X_VECTOR = EXIOBASE_PATH / 'x.csv'
 ISIC_NACE_MAPPING = BASE_PATH / 'downloaded_data/ENCORE/14. EXIOBASE NACE ISIC crosswalk.csv'
 
 # ND-GAIN: Nature degradation vulnerability indices
-ND_GAIN_PATH = BASE_PATH / 'downloaded_data/ND-GAIN index/resources/vulnerability'
+ND_GAIN_PATH = BASE_PATH / 'downloaded_data/Nature degradation/ND_GAIN index/vulnerability'
 ISO_CODES_PATH = BASE_PATH / 'downloaded_data/Misc_tables'
 
 # Additional vulnerability generation parameters
