@@ -25,6 +25,8 @@ from . import data_loader
 from . import vulnerability
 from . import financial
 from . import visualization
+from . import vulnerability_generator
+from .vulnerability_generator import regenerate_vulnerability_files
 
 # Convenience function for running the full pipeline
 def run_pipeline(create_plots=True, **kwargs):
@@ -173,10 +175,12 @@ __all__ = [
     'run_quick_test',
     'run_anacredit_pipeline',
     'run_anacredit_quick_test',
+    'regenerate_vulnerability_files',
     'config',
     'data_loader',
     'vulnerability',
     'financial',
     'visualization',
+    'vulnerability_generator',
     '__version__',
 ]

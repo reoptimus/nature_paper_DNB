@@ -8,6 +8,7 @@ BASE_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv
 DATA_PATH = BASE_PATH / 'git_repo/nature_paper_DNB/data'
 VULN_config_PATH = BASE_PATH / 'DS_Vuln_update/config_store'
 VULN_final_PATH = BASE_PATH / 'DS_Vuln_update/Vuln_final_store'
+VULN_PATH = VULN_final_PATH  # Alias for backwards compatibility
 ANALYSIS_PATH = BASE_PATH / 'analysis/output_data'
 
 # Input files in secured environment
@@ -20,10 +21,50 @@ ANACREDIT_INSTRUMENT_FILE = SECURED_DRIVE_PATH / 'anacredit_NL/anacredit_df_2024
 # results (also in secured env.)
 RESULTS_PATH = SECURED_DRIVE_PATH / 'results/'
 
-# file calculated based on ENCORE and EXIOBASE
+# File calculated based on ENCORE and EXIOBASE (used by main pipeline)
+# These are the OUTPUT files from vulnerability generation
 VULN_FILE = 'Vuln_final_03_11_2025.csv'
 ALPHA_FILE = 'Alpha_final_03_11_2025.xlsx'
 X_FILE = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi/x.csv'
+
+# =============================================================================
+# VULNERABILITY GENERATION PARAMETERS
+# (Optional - only needed if regenerating vulnerability files from scratch)
+# =============================================================================
+
+# Input data sources for vulnerability generation
+# ENCORE: Ecosystem service dependency ratings
+ENCORE_FILE = BASE_PATH / 'downloaded_data/ENCORE/06. Dependency mat ratings.csv'
+ENCORE_RATING_MAPPING = {
+    'Very High': 4,
+    'High': 3,
+    'Medium': 2,
+    'Low': 1,
+    'Very Low': 0.5
+}
+
+# EXIOBASE: Multi-regional input-output data
+EXIOBASE_PATH = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi'
+EXIOBASE_A_MATRIX = EXIOBASE_PATH / 'A.csv'
+EXIOBASE_Z_MATRIX = EXIOBASE_PATH / 'Z.csv'
+EXIOBASE_X_VECTOR = EXIOBASE_PATH / 'x.csv'
+
+# ISIC to NACE mapping
+ISIC_NACE_MAPPING = BASE_PATH / 'downloaded_data/ENCORE/14. EXIOBASE NACE ISIC crosswalk.csv'
+
+# ND-GAIN: Nature degradation vulnerability indices
+ND_GAIN_PATH = BASE_PATH / 'downloaded_data/ND-GAIN index/resources/vulnerability'
+ISO_CODES_PATH = BASE_PATH / 'downloaded_data/Misc_tables'
+
+# Additional vulnerability generation parameters
+ADJ_IND_FILE = 'Adj_ind_per_NACE.xlsx'  # Adjustment indicators per NACE sector
+
+# Vulnerability generation settings
+ACTIVATION_GOV_VULN = 1  # 1 to activate government sector vulnerability calculation
+ACTIVATION_FIN_VULN = 1  # 1 to activate financial sector vulnerability calculation
+RATIO_GOV_ON_NFC = 0.5  # Ratio of government to (non-financial corporate + government)
+
+# =============================================================================
 
 # sector and country correspondance mapping
 NACE_MAP_FILE = DATA_PATH / 'nace_0d_map.xlsx'

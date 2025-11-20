@@ -537,6 +537,158 @@ SHS_HOLDER_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/SHS/F_511_31_3
 
 ---
 
+## 🔄 Vulnerability Data Generation (Optional)
+
+### Two Workflows
+
+The package supports two workflows for handling vulnerability data:
+
+| Workflow | Description | Time | When to Use |
+|----------|-------------|------|-------------|
+| **Standard** (Recommended) | Use pre-generated `Vuln_final.csv` and `Alpha_final.xlsx` | Minutes | Regular portfolio analysis |
+| **Regeneration** (Optional) | Generate vulnerability files from ENCORE/EXIOBASE/ND-GAIN | 10-30 min | Updating underlying vulnerability data |
+
+### Standard Workflow: Using Pre-Generated Files
+
+**This is the recommended approach** for regular analysis:
+
+```python
+import nature_analysis
+
+# Use pre-generated vulnerability files (stored in data directory)
+results = nature_analysis.run_pipeline()
+
+# Or for AnaCredit
+results = nature_analysis.run_anacredit_pipeline()
+```
+
+The vulnerability files (`Vuln_final.csv` and `Alpha_final.xlsx`) contain sector-level vulnerability scores that are **scenario-specific** but **instrument-agnostic**. They can be reused across different instrument datasets (SHS or AnaCredit).
+
+### Regeneration Workflow: Creating New Vulnerability Files
+
+**Only regenerate vulnerability files when:**
+- ✅ New ENCORE dependency ratings are released
+- ✅ EXIOBASE updates to a new version/year
+- ✅ ND-GAIN indices are updated
+- ✅ Adding new scenario configurations
+- ✅ Modifying shock parameters
+
+**Don't regenerate for:**
+- ❌ Different instrument datasets (SHS vs AnaCredit)
+- ❌ Different holder data
+- ❌ Financial model parameter changes
+- ❌ Visualization adjustments
+
+### How to Regenerate Vulnerability Files
+
+**Method 1: Using the convenience function**
+
+```python
+import nature_analysis
+
+# Regenerate from ENCORE, EXIOBASE, and ND-GAIN raw data
+shapes = nature_analysis.regenerate_vulnerability_files()
+
+print(f"Generated Alpha file: {shapes['alpha']}")
+print(f"Generated Vuln file: {shapes['vuln']}")
+```
+
+**Method 2: Using the example script**
+
+```bash
+python examples/vulnerability_generation.py
+```
+
+**Method 3: See detailed example**
+
+```bash
+python examples/using_stored_vulnerabilities.py
+```
+
+### What Gets Generated
+
+**Input Data Sources:**
+1. **ENCORE** - Ecosystem service dependency ratings by sector
+2. **EXIOBASE** - Multi-regional input-output matrices (A, Z, X)
+3. **ND-GAIN** - Nature degradation vulnerability indices by country
+
+**Process:**
+```
+ENCORE (sector dependencies)
+    + EXIOBASE (economic linkages)
+    + ND-GAIN (nature degradation)
+    ↓
+Calculate direct + indirect dependencies
+    ↓
+Apply nature degradation indices
+    ↓
+Generate vulnerability scores
+    ↓
+Vuln_final.csv + Alpha_final.xlsx
+```
+
+**Output Files:**
+- `Vuln_final.csv` - Vulnerability scores per region/sector/ecosystem service/scenario
+- `Alpha_final.xlsx` - Shock parameters per area/ecosystem service/scenario
+
+### Configuration Requirements
+
+To regenerate vulnerability files, ensure these are set in `config.py`:
+
+```python
+# ENCORE data
+ENCORE_FILE = BASE_PATH / 'downloaded_data/ENCORE/06. Dependency mat ratings.csv'
+ENCORE_RATING_MAPPING = {'Very High': 4, 'High': 3, 'Medium': 2, 'Low': 1}
+
+# EXIOBASE data
+EXIOBASE_A_MATRIX = EXIOBASE_PATH / 'A.csv'
+EXIOBASE_Z_MATRIX = EXIOBASE_PATH / 'Z.csv'
+EXIOBASE_X_VECTOR = EXIOBASE_PATH / 'x.csv'
+
+# ND-GAIN data
+ND_GAIN_PATH = BASE_PATH / 'downloaded_data/ND-GAIN index/resources/vulnerability'
+
+# Configuration files directory
+VULN_config_PATH = BASE_PATH / 'DS_Vuln_update/config_store'
+```
+
+Place scenario configuration files (Python modules) in `DS_Vuln_update/config_store/`:
+- `config_0_World_shock_10perc.py`
+- `config_1_EUshock_15perc.py`
+- etc.
+
+### API Reference
+
+**vulnerability_generator Module:**
+
+```python
+from nature_analysis import vulnerability_generator
+
+# Load and process ENCORE data
+encore_df = vulnerability_generator.load_and_clean_encore(
+    path_to_file, rating_mapping
+)
+
+# Build Leontief inverse matrix
+L_I_bar, A = vulnerability_generator.build_leontief_matrix(
+    exiobase_a_matrix_path
+)
+
+# Calculate subcontracting ratios
+SR_mat, X = vulnerability_generator.calculate_subcontracting_ratio(
+    Z_path, X_path, list_cntry_sect
+)
+
+# Run full generation workflow
+shapes = vulnerability_generator.run_full_vulnerability_generation(
+    path_ds_store
+)
+```
+
+See [`CLAUDE.md`](CLAUDE.md#vulnerability-data-generation-optional-workflow) for detailed documentation on the vulnerability generation workflow.
+
+---
+
 ## 📊 Data Requirements
 
 ### Required Input Files
