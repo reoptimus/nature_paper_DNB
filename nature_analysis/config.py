@@ -6,7 +6,7 @@ from pathlib import Path
 # File paths
 BASE_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv/OS-2025')
 DATA_PATH = BASE_PATH / 'git_repo/nature_paper_DNB/data'
-DS_VULN_UPDATE_PATH = BASE_PATH / 'DS_Vuln_update'
+DS_VULN_UPDATE_PATH = DATA_PATH / 'DS_Vuln_update'
 VULN_config_PATH = DS_VULN_UPDATE_PATH / 'config_store'
 VULN_final_PATH = DS_VULN_UPDATE_PATH / 'Vuln_final_store'
 VULN_PATH = VULN_final_PATH  # Alias for backwards compatibility
@@ -59,11 +59,6 @@ ISO_CODES_PATH = BASE_PATH / 'downloaded_data/Misc_tables'
 # Additional vulnerability generation parameters
 ADJ_IND_FILE = 'ROE_ROA_debt_ratio per NACE lvl1/Adj_ind_by_industry.xlsx'  # Adjustment indicators per NACE sector
 AREA_COUNTRY_CODE_FILE = 'regions_ISO2_continent_area.csv'  # ISO2 to area/continent mapping
-
-# Vulnerability generation settings
-ACTIVATION_GOV_VULN = 1  # 1 to activate government sector vulnerability calculation
-ACTIVATION_FIN_VULN = 1  # 1 to activate financial sector vulnerability calculation
-RATIO_GOV_ON_NFC = 0.5  # Ratio of government to (non-financial corporate + government)
 
 # =============================================================================
 

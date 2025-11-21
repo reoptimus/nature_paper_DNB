@@ -120,7 +120,6 @@ def example_5_depreciation_calculation():
 def example_6_Vulnerability_generator()
     import importlib
     import nature_analysis
-    importlib.reload(nature_analysis.config)
     shapes = nature_analysis.regenerate_vulnerability_files()
 
 if __name__ == "__main__":
