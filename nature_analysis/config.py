@@ -41,7 +41,10 @@ X_FILE = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi/x.csv
 
 # Input data sources for vulnerability generation
 # ENCORE: Ecosystem service dependency ratings
-ENCORE_FILE = BASE_PATH / 'downloaded_data/ENCORE/06. Dependency mat ratings.csv'
+ENCORE_PATH = 'downloaded_data/ENCORE/ENCORE files October 2024_072025'
+ENCORE_FILE = BASE_PATH / ENCORE_PATH / '06. Dependency mat ratings.csv'
+# ISIC to NACE mapping
+ISIC_NACE_MAPPING = BASE_PATH / ENCORE_PATH / '14. EXIOBASE NACE ISIC crosswalk.csv'
 
 # EXIOBASE: Multi-regional input-output data
 EXIOBASE_PATH = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi'
