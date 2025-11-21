@@ -6,8 +6,9 @@ from pathlib import Path
 # File paths
 BASE_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv/OS-2025')
 DATA_PATH = BASE_PATH / 'git_repo/nature_paper_DNB/data'
-VULN_config_PATH = BASE_PATH / 'DS_Vuln_update/config_store'
-VULN_final_PATH = BASE_PATH / 'DS_Vuln_update/Vuln_final_store'
+DS_VULN_UPDATE_PATH = BASE_PATH / 'DS_Vuln_update'
+VULN_config_PATH = DS_VULN_UPDATE_PATH / 'config_store'
+VULN_final_PATH = DS_VULN_UPDATE_PATH / 'Vuln_final_store'
 VULN_PATH = VULN_final_PATH  # Alias for backwards compatibility
 ANALYSIS_PATH = BASE_PATH / 'analysis/output_data'
 
@@ -51,12 +52,13 @@ EXIOBASE_X_VECTOR = EXIOBASE_PATH / 'x.csv'
 # ISIC to NACE mapping
 ISIC_NACE_MAPPING = BASE_PATH / 'downloaded_data/ENCORE/14. EXIOBASE NACE ISIC crosswalk.csv'
 
-# Nature Index: Nature degradation vulnerability indices
-NATURE_INDEX_PATH = BASE_PATH / 'downloaded_data/Nature degradation/ND_GAIN index/vulnerability'
+# Nature Index: Nature degradation vulnerability indices (ND-GAIN)
+NATURE_INDEX_PATH = BASE_PATH / 'downloaded_data/ND-GAIN index/resources/vulnerability'
 ISO_CODES_PATH = BASE_PATH / 'downloaded_data/Misc_tables'
 
 # Additional vulnerability generation parameters
-ADJ_IND_FILE = 'Adj_ind_per_NACE.xlsx'  # Adjustment indicators per NACE sector
+ADJ_IND_FILE = 'ROE_ROA_debt_ratio per NACE lvl1/Adj_ind_by_industry.xlsx'  # Adjustment indicators per NACE sector
+AREA_COUNTRY_CODE_FILE = 'regions_ISO2_continent_area.csv'  # ISO2 to area/continent mapping
 
 # Vulnerability generation settings
 ACTIVATION_GOV_VULN = 1  # 1 to activate government sector vulnerability calculation
