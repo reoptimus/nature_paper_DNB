@@ -117,6 +117,11 @@ def example_5_depreciation_calculation():
     # Calculate depreciation for this specific case
     Anacred_dep_df = pipeline_anacredit.calculate_instrument_depreciations()
 
+def example_6_Vulnerability_generator()
+    import importlib
+    import nature_analysis
+    importlib.reload(nature_analysis.config)
+    shapes = nature_analysis.regenerate_vulnerability_files()
 
 if __name__ == "__main__":
     import sys
