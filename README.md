@@ -548,6 +548,16 @@ The package supports two workflows for handling vulnerability data:
 | **Standard** (Recommended) | Use pre-generated `Vuln_final.csv` and `Alpha_final.xlsx` | Minutes | Regular portfolio analysis |
 | **Regeneration** (Optional) | Generate vulnerability files from ENCORE/EXIOBASE/ND-GAIN | 10-30 min | Updating underlying vulnerability data |
 
+**💡 Key Advantage:** Vulnerability generation is **completely independent** of financial analysis. You can:
+- ✅ Generate vulnerability tables without any SHS or AnaCredit instrument data
+- ✅ Test different scenario configurations (5%, 10%, 15% shocks) separately
+- ✅ Update to new ENCORE/EXIOBASE releases without re-processing portfolios
+- ✅ Create custom shock parameters for research purposes
+
+This separation means vulnerability scores are **scenario-specific** but **instrument-agnostic** – they describe sector-country-ecosystem relationships, not individual securities.
+
+**Example:** Run `python examples/vulnerability_generation.py` to generate vulnerability tables independently, then use them with any instrument dataset.
+
 ### Standard Workflow: Using Pre-Generated Files
 
 **This is the recommended approach** for regular analysis:
