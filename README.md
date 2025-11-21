@@ -633,29 +633,36 @@ Vuln_final.csv + Alpha_final.xlsx
 
 ### Configuration Requirements
 
-To regenerate vulnerability files, ensure these are set in `config.py`:
+**Centralized paths** are defined in `nature_analysis/config.py`:
 
 ```python
 # ENCORE data
 ENCORE_FILE = BASE_PATH / 'downloaded_data/ENCORE/06. Dependency mat ratings.csv'
-ENCORE_RATING_MAPPING = {'Very High': 4, 'High': 3, 'Medium': 2, 'Low': 1}
 
 # EXIOBASE data
+EXIOBASE_PATH = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi'
 EXIOBASE_A_MATRIX = EXIOBASE_PATH / 'A.csv'
 EXIOBASE_Z_MATRIX = EXIOBASE_PATH / 'Z.csv'
 EXIOBASE_X_VECTOR = EXIOBASE_PATH / 'x.csv'
 
+# ISIC-NACE mapping
+ISIC_NACE_MAPPING = BASE_PATH / 'downloaded_data/ENCORE/14. EXIOBASE NACE ISIC crosswalk.csv'
+
 # ND-GAIN data
-ND_GAIN_PATH = BASE_PATH / 'downloaded_data/ND-GAIN index/resources/vulnerability'
+NATURE_INDEX_PATH = BASE_PATH / 'downloaded_data/ND-GAIN index/resources/vulnerability'
+ISO_CODES_PATH = BASE_PATH / 'downloaded_data/Misc_tables'
 
 # Configuration files directory
-VULN_config_PATH = BASE_PATH / 'DS_Vuln_update/config_store'
+DS_VULN_UPDATE_PATH = BASE_PATH / 'DS_Vuln_update'
+VULN_config_PATH = DS_VULN_UPDATE_PATH / 'config_store'
 ```
 
-Place scenario configuration files (Python modules) in `DS_Vuln_update/config_store/`:
-- `config_0_World_shock_10perc.py`
-- `config_1_EUshock_15perc.py`
+**Scenario-specific parameters** are in `DS_Vuln_update/config_store/config_*.py`:
+- `config_0_World_shock_10perc_02_GOVonNFC.py` - Contains only scenario-specific parameters
+- `config_1_EUshock_3perc_08_GOVonNFC.py` - Production shocks, rating mappings, activation flags
 - etc.
+
+Each scenario file contains ONLY: rating mapping, production shocks, gov/NFC ratio, and activation flags.
 
 ### API Reference
 

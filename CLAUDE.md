@@ -211,35 +211,74 @@ shapes = vulnerability_generator.run_full_vulnerability_generation(path_ds_store
 
 ### Configuration Requirements
 
-To regenerate vulnerability files, ensure these parameters are set in `config.py`:
+**Centralized Configuration (`config.py`):**
+
+All data paths and common parameters are centralized in `nature_analysis/config.py`:
 
 ```python
 # ENCORE data
 ENCORE_FILE = BASE_PATH / 'downloaded_data/ENCORE/06. Dependency mat ratings.csv'
-ENCORE_RATING_MAPPING = {'Very High': 4, 'High': 3, 'Medium': 2, 'Low': 1}
 
 # EXIOBASE data
+EXIOBASE_PATH = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi'
 EXIOBASE_A_MATRIX = EXIOBASE_PATH / 'A.csv'
 EXIOBASE_Z_MATRIX = EXIOBASE_PATH / 'Z.csv'
 EXIOBASE_X_VECTOR = EXIOBASE_PATH / 'x.csv'
 
+# ISIC-NACE mapping
+ISIC_NACE_MAPPING = BASE_PATH / 'downloaded_data/ENCORE/14. EXIOBASE NACE ISIC crosswalk.csv'
+
 # ND-GAIN data
-ND_GAIN_PATH = BASE_PATH / 'downloaded_data/ND-GAIN index/resources/vulnerability'
+NATURE_INDEX_PATH = BASE_PATH / 'downloaded_data/ND-GAIN index/resources/vulnerability'
+ISO_CODES_PATH = BASE_PATH / 'downloaded_data/Misc_tables'
 
 # Configuration files directory
-VULN_config_PATH = BASE_PATH / 'DS_Vuln_update/config_store'
+DS_VULN_UPDATE_PATH = BASE_PATH / 'DS_Vuln_update'
+VULN_config_PATH = DS_VULN_UPDATE_PATH / 'config_store'
+
+# Adjustment indicators
+ADJ_IND_FILE = 'ROE_ROA_debt_ratio per NACE lvl1/Adj_ind_by_industry.xlsx'
+AREA_COUNTRY_CODE_FILE = 'regions_ISO2_continent_area.csv'
 ```
 
-**Configuration Files:**
-Place scenario configuration files in `DS_Vuln_update/config_store/`:
-- `config_0_World_shock_10perc.py`
-- `config_1_EUshock_15perc.py`
+**Scenario Configuration Files (`config_store/config_*.py`):**
+
+Place scenario-specific configuration files in `DS_Vuln_update/config_store/`:
+- `config_0_World_shock_10perc_02_GOVonNFC.py`
+- `config_1_EUshock_3perc_08_GOVonNFC.py`
 - etc.
 
-Each configuration file specifies:
-- Shock magnitudes per region
-- Country-to-area mappings
-- Sector adjustment flags
+Each scenario configuration file contains **ONLY scenario-specific parameters**:
+- **ENCORE rating mapping** - Dependency rating conversion (linear/exponential/S-curve)
+- **Production shocks** - Shock magnitudes per region (e.g., -0.1 for 10% shock)
+- **Gov/NFC ratio** - Split between government and non-financial corporates
+- **Activation flags** - Enable/disable alternative gov/financial vulnerability calculations
+
+**Example scenario configuration:**
+```python
+"""Scenario: World shock 10% with Gov/NFC ratio 0.2"""
+import pandas as pd
+
+# ENCORE rating mapping (scenario-specific)
+rating_mapping_linear = {'ND': 0, 'VL': 0.2, 'L': 0.4, 'M': 0.6, 'H': 0.8, 'VH': 1}
+rating_mapping = rating_mapping_linear
+
+# Production shock by region
+data_shock = {
+    "Area": ['European Union (EU)', 'North America', ...],
+    "Production shock": [-0.1, -0.1, ...]  # 10% shock
+}
+data_shock = pd.DataFrame(data_shock)
+
+# Government/NFC ratio
+ratio_Gov_on_NFCpGov = 0.2
+
+# Vulnerability calculation flags
+activation_gov_vuln = 0
+activation_fin_vuln = 0
+```
+
+**Key Improvement:** All data paths are now centralized in `config.py`, eliminating redundancy across scenario files. Scenario files are ~60% smaller and contain only parameters that vary between scenarios.
 
 ### Vulnerability Generator Module Functions
 
