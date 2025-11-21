@@ -113,6 +113,59 @@ The package uses **vulnerability scores** and **alpha shock parameters** that qu
 | **Standard** (Recommended) | Regular analysis | Minutes | Pre-generated Vuln/Alpha files |
 | **Regeneration** (Optional) | Updating vulnerability data | 10-30 minutes | ENCORE, EXIOBASE, ND-GAIN raw data |
 
+### Key Advantage: Standalone Vulnerability Generation
+
+**IMPORTANT:** The vulnerability generation process is **completely independent** of the financial analysis pipeline. This separation provides significant benefits:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ VULNERABILITY GENERATION (Standalone)                          │
+│ ────────────────────────────────────────────────────────────   │
+│ Input:  ENCORE + EXIOBASE + ND-GAIN + Scenario configs        │
+│ Output: Vuln_final.csv + Alpha_final.xlsx                     │
+│ Time:   10-30 minutes                                          │
+│ Depends on: Ecosystem data ONLY                               │
+│                                                                │
+│ ✓ No instrument data needed (SHS or AnaCredit)                │
+│ ✓ Update vulnerability scores independently                   │
+│ ✓ Test different scenario configurations easily               │
+│ ✓ Generate custom shock parameters for research               │
+└────────────────────────────────────────────────────────────────┘
+                              ↓
+┌────────────────────────────────────────────────────────────────┐
+│ FINANCIAL ANALYSIS (SHS or AnaCredit Pipeline)                 │
+│ ────────────────────────────────────────────────────────────   │
+│ Input:  Vuln_final.csv + Instrument data (SHS/AnaCredit)      │
+│ Output: Portfolio losses by holder/instrument                 │
+│ Time:   Minutes                                                │
+│ Depends on: Vulnerability files + financial instruments       │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Use Case Example:**
+
+You want to analyze the impact of a 5% production shock (new scenario) on your portfolio:
+
+1. **Create new scenario config** (`config_2_World_shock_5perc_05_GOVonNFC.py`)
+   - Only 62 lines of scenario-specific parameters
+   - No need to touch any instrument data
+
+2. **Regenerate vulnerability files**
+   ```python
+   python examples/vulnerability_generation.py
+   ```
+   - Takes 10-30 minutes
+   - Generates new Vuln_final.csv with your 5% shock scenario
+
+3. **Run financial analysis** (uses existing instrument data)
+   ```python
+   python examples/basic_usage.py  # or anacredit_usage.py
+   ```
+   - Takes minutes
+   - Calculates portfolio losses using new vulnerability scores
+
+**Key Insight:** Vulnerability scores are **scenario-specific** but **instrument-agnostic**. They describe sector-country-ecosystem service relationships, not individual securities. This means you can update scenarios without re-processing instrument data.
+
 ### Vulnerability Generation Module
 
 The `vulnerability_generator.py` module creates vulnerability files from:
