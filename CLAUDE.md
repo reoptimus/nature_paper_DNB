@@ -96,6 +96,31 @@ When modifying code, consider:
 
 ## Vulnerability Data Generation (Optional Workflow)
 
+### 🌟 KEY FEATURE: One-Command Vulnerability Regeneration
+
+**The most important thing to know:** You can regenerate ALL vulnerability scenarios with a single function call:
+
+```python
+import nature_analysis
+
+# Automatically discovers and processes ALL scenario configs
+shapes = nature_analysis.regenerate_vulnerability_files()
+```
+
+**What this does:**
+1. 🔍 **Auto-discovers** all `config_*.py` files in `data/DS_Vuln_update/config_store/`
+2. 🔄 **Processes each scenario** independently (World 10%, EU 3%, your custom scenarios)
+3. 📊 **Generates vulnerability scores** from ENCORE + EXIOBASE + ND-GAIN
+4. 💾 **Outputs combined files:**
+   - `Vuln_final.csv` - All scenarios merged
+   - `Alpha_final.xlsx` - All shock parameters merged
+
+**No instrument data needed!** Completely independent of SHS/AnaCredit financial analysis.
+
+**Typical use case:** User adds new scenario config file → Runs one function → Gets updated vulnerability files → Uses with existing portfolios
+
+---
+
 ### Overview
 
 The package uses **vulnerability scores** and **alpha shock parameters** that quantify how ecosystem service disruptions affect economic sectors by country. These files (`Vuln_final.csv` and `Alpha_final.xlsx`) are **pre-generated and stored** in the data directory.
@@ -111,7 +136,7 @@ The package uses **vulnerability scores** and **alpha shock parameters** that qu
 | Workflow | When to Use | Time Required | Files Used |
 |----------|-------------|---------------|------------|
 | **Standard** (Recommended) | Regular analysis | Minutes | Pre-generated Vuln/Alpha files |
-| **Regeneration** (Optional) | Updating vulnerability data | 10-30 minutes | ENCORE, EXIOBASE, ND-GAIN raw data |
+| **Regeneration** (Key Feature) | Updating vulnerability data | 10-30 minutes | ENCORE, EXIOBASE, ND-GAIN raw data |
 
 ### Key Advantage: Standalone Vulnerability Generation
 
@@ -148,14 +173,18 @@ You want to analyze the impact of a 5% production shock (new scenario) on your p
 
 1. **Create new scenario config** (`config_2_World_shock_5perc_05_GOVonNFC.py`)
    - Only 62 lines of scenario-specific parameters
+   - Place in `data/DS_Vuln_update/config_store/`
    - No need to touch any instrument data
 
-2. **Regenerate vulnerability files**
+2. **Regenerate vulnerability files with ONE function call**
    ```python
-   python examples/vulnerability_generation.py
+   import nature_analysis
+
+   # Automatically discovers new config and ALL existing configs
+   shapes = nature_analysis.regenerate_vulnerability_files()
    ```
-   - Takes 10-30 minutes
-   - Generates new Vuln_final.csv with your 5% shock scenario
+   - Takes 10-30 minutes total
+   - Generates new Vuln_final.csv with ALL scenarios including your 5% shock
 
 3. **Run financial analysis** (uses existing instrument data)
    ```python
@@ -163,8 +192,11 @@ You want to analyze the impact of a 5% production shock (new scenario) on your p
    ```
    - Takes minutes
    - Calculates portfolio losses using new vulnerability scores
+   - No changes to instrument data needed
 
 **Key Insight:** Vulnerability scores are **scenario-specific** but **instrument-agnostic**. They describe sector-country-ecosystem service relationships, not individual securities. This means you can update scenarios without re-processing instrument data.
+
+**Pro tip:** The function automatically discovers ALL config files. Just add your new scenario config to the directory and run `regenerate_vulnerability_files()` - it handles the rest!
 
 ### Vulnerability Generation Module
 
