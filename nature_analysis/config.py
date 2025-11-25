@@ -30,8 +30,8 @@ RESULTS_PATH = SECURED_DRIVE_PATH / 'results/'
 
 # File calculated based on ENCORE and EXIOBASE (used by main pipeline)
 # These are the OUTPUT files from vulnerability generation
-VULN_FILE = 'Vuln_final_03_11_2025.csv'
-ALPHA_FILE = 'Alpha_final_03_11_2025.xlsx'
+VULN_FILE = 'Final_Vuln_file.csv'
+ALPHA_FILE = 'Final_alpha_file.xlsx'
 X_FILE = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi/x.csv'
 
 # =============================================================================
