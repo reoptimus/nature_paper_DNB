@@ -69,7 +69,18 @@ merged_df = pipeline_anacredit.vuln_df.merge(
     on=['region', 'eco_serv', 'Vuln_type'],
     how = 'left' )
 
-
+# SHS param
+vuln_df= pipeline_SHS.vuln_df
+instrmnt_df=pipeline_SHS.instrmnt_df
+alpha_df=pipeline_SHS.alpha_df
+eco_service=pipeline_SHS.eco_services
+scenario=pipeline_SHS.scenarios
+aggreg_type=config.AGGREG_TYPE
+nace_map=pipeline_SHS.nace_map   
+dep_type= config.DEPENDENCY_TYPE
+scenarios = pipeline_SHS.scenarios
+n_jobs = -1
+# anacredit param
 vuln_df= pipeline_anacredit.vuln_df
 instrmnt_df=pipeline_anacredit.instrmnt_df
 alpha_df=pipeline_anacredit.alpha_df
@@ -78,6 +89,8 @@ scenario=pipeline_anacredit.scenarios
 option=config.AGGREG_TYPE
 nace_map=pipeline_anacredit.nace_map   
 dep_type= config.DEPENDENCY_TYPE
+scenarios = pipeline_anacredit.scenarios
+n_jobs = -1
 
 # to run the function
 vulnerability.calculate_anacredit_prudential_losses(vuln_df ,instrmnt_df, alpha_df, eco_service, scenario, option, nace_map, dep_type)

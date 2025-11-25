@@ -11,15 +11,16 @@ import logging
 from . import config
 from . import data_loader
 from . import vulnerability
-from . import financial as financial_models
+from . import financial
 from . import visualization
 
-from nature_analysis import (
-    pipeline,
-    vulnerability,
-    config,
-    data_loader
-)
+# from nature_analysis import (
+#     pipeline,
+#     vulnerability,
+#     config,
+#     data_loader,
+#      financial
+# )
 
 # Set up logging
 logging.basicConfig(
@@ -78,27 +79,7 @@ class SHSAnalysisPipeline:
         return df_merged
     
     def calculate_instrument_depreciations(self) -> pd.DataFrame:
-        """
-        Calculate delta_PD for all instruments across all scenarios.
-        
-        Returns DataFrame with delta PDs columns for each scenario/ES combination.
-        """
-        logger.info("Calculating instrument depreciations...")
-        
-        # Use configured eco services or all available
-        eco_services = config.ECO_SERVICES if hasattr(config, 'ECO_SERVICES') else self.eco_services
-        
-        depreciation_df = vulnerability.calculate_all_deltaPD(
-            self.vuln_df,
-            self.instrmnt_df,
-            self.alpha_df,
-            eco_services,
-            self.scenarios,
-            self.nace_map,
-            config.AGGREG_TYPE,
-            config.DEPENDENCY_TYPE,
-            n_jobs=-1
-        )
+
         
         output_file = (config.RESULTS_PATH / 
                       f'merged_SHS_instr_vulnxalpha_scenarios_{config.DEPENDENCY_TYPE}_{config.AGGREG_TYPE}.csv')
@@ -107,58 +88,6 @@ class SHSAnalysisPipeline:
 
         return depreciation_df
 
-    def calculate_instrument_depreciations_light(self, n_instruments: int = 100) -> pd.DataFrame:
-        """
-        Lightweight version: Calculate delta_PD for limited instruments and scenarios.
-
-        This method is designed for quick testing and demonstration purposes.
-        It uses only:
-        - First n_instruments instruments (default: 100)
-        - First scenario
-        - First ecosystem service
-
-        Args:
-            n_instruments: Number of instruments to process (default: 100)
-
-        Returns:
-            DataFrame with delta PDs column for the limited scenario
-        """
-        logger.info(f"Calculating lightweight depreciations (first {n_instruments} instruments)...")
-
-        # Use configured eco services or all available
-        eco_services = config.ECO_SERVICES if hasattr(config, 'ECO_SERVICES') else self.eco_services
-
-        # Limit to first scenario and first ecosystem service
-        first_scenario = self.scenarios[0]
-        first_eco_service = eco_services[0]
-
-        logger.info(f"Using scenario: {first_scenario}, ecosystem service: {first_eco_service}")
-
-        # Limit instruments to first n_instruments
-        instrmnt_subset = self.instrmnt_df.head(n_instruments).copy()
-
-        # Calculate depreciation for the single scenario/ES combination
-        depreciation_df = vulnerability_calc.calculate_deltaPD(
-            self.vuln_df,
-            instrmnt_subset,
-            self.alpha_df,
-            first_eco_service,
-            first_scenario,
-            config.AGGREG_TYPE,
-            self.nace_map,
-            config.DEPENDENCY_TYPE
-        )
-
-        # Combine with instrument metadata
-        final_df = pd.concat([
-            instrmnt_subset[['PERIOD', 'IDENTIFIER', 'INSTR_CLASS',
-                            'ISSUER_COUNTRY', 'nace_lvl1', 'nace_lvl3']],
-            depreciation_df
-        ], axis=1)
-
-        logger.info(f"Lightweight delta_PD calculation complete: {final_df.shape}")
-
-        return final_df
 
     def calculate_financial_impacts(self, depreciation_df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -172,112 +101,92 @@ class SHSAnalysisPipeline:
         """
         logger.info("Calculating financial impacts...")
         
-        # Reshape depreciation data to long format
-        id_cols = ['PERIOD', 'IDENTIFIER', 'INSTR_CLASS', 'ISSUER_COUNTRY', 
-                   'nace_lvl1', 'nace_lvl3']
+        """
+        Calculate delta_PD for all instruments across all scenarios.
         
-        dpr_long = depreciation_df.melt(
-            id_vars=id_cols,
-            var_name='Scenario',
-            value_name='Depreciation'
+        Returns DataFrame with delta PDs columns for each scenario/ES combination.
+        """
+        logger.info("Calculating instrument depreciations...")
+        
+        # Use configured eco services or all available
+        eco_services = config.ECO_SERVICES if hasattr(config, 'ECO_SERVICES') else self.eco_services
+        
+        depreciation_df = vulnerability.calculate_all_deltaPD_SHS(
+            self.vuln_df,
+            self.instrmnt_df,
+            self.alpha_df,
+            eco_services,
+            self.scenarios,
+            self.nace_map,
+            config.AGGREG_TYPE,
+            config.DEPENDENCY_TYPE,
+            n_jobs=-1
         )
-        
-        # Clean scenario names
-        dpr_long['Scenario'] = dpr_long['Scenario'].str.replace('Depr_', '', regex=False)
-        dpr_long['Eco_serv'] = dpr_long['Scenario'].str.split('_').str[-1]
-        dpr_long['Scenario'] = dpr_long['Scenario'].str.rsplit('_', n=1).str[0]
+        # pipeline_SHS. = self
+        # depreciation_df = vulnerability.calculate_all_deltaPD_SHS(
+        #     pipeline_SHS.vuln_df,
+        #     pipeline_SHS.instrmnt_df,
+        #     pipeline_SHS.alpha_df,
+        #     eco_services,
+        #     pipeline_SHS.scenarios,
+        #     pipeline_SHS.nace_map,
+        #     config.AGGREG_TYPE,
+        #     config.DEPENDENCY_TYPE,
+        #     n_jobs=-1
+        # )
         
         # Clean maturity data
-        instrmnt_clean = data_loader.clean_instrument_maturity(self.instrmnt_df)
+        instrmnt_clean = data_loader.clean_instrument_maturity(depreciation_df)
+        # instrmnt_clean = data_loader.clean_instrument_maturity(pipeline_SHS.instrmnt_df)
         
         # Get unique scenario/ES combinations
-        scenario_choices = dpr_long['Scenario'].unique()
-        es_choices = dpr_long['Eco_serv'].unique()
-        
-        # Calculate impacts for each scenario/ES
-        results_list = []
-        
-        for scenario, es in product(scenario_choices, es_choices):
-            logger.info(f"Processing scenario: {scenario}, ES: {es}")
-            
-            # Prepare data for this scenario
-            instrmnt_loop = instrmnt_clean[[
-                'PERIOD', 'IDENTIFIER', 'INSTR_CLASS', 'ISSUER_COUNTRY',
-                'ISSUER_SECTOR', 'nace_lvl1', 'resid_mat_yr', 'pd', 'vol', 'debt_ratio'
-            ]].copy()
-            
-            instrmnt_loop['Scenario'] = scenario
-            instrmnt_loop['Eco_serv'] = es
-            
-            # Merge with depreciation
-            dpr_subset = dpr_long[
-                (dpr_long['Scenario'] == scenario) & 
-                (dpr_long['Eco_serv'] == es)
-            ][['PERIOD', 'IDENTIFIER', 'Depreciation']]
-            
-            instrmnt_loop = instrmnt_loop.merge(
-                dpr_subset, on=['PERIOD', 'IDENTIFIER'], how='left'
-            )
-            
-            # Calculate financial impacts
-            result = financial_models.calculate_instrument_impacts(instrmnt_loop)
-            
-            results_list.append(result)
-        
-        # Combine all results
-        final_results = pd.concat(results_list, ignore_index=True)
-        
-        return final_results
-    
-    def calculate_shs_losses(self, financial_impacts: pd.DataFrame) -> pd.DataFrame:
-        """
-        Calculate SHS holder losses by merging with holder-instrument data.
-        
-        Args:
-            financial_impacts: DataFrame with price variations
-        
-        Returns:
-            DataFrame with aggregated losses by holder
-        """
-        logger.info("Calculating SHS holder losses...")
+        scenario_choices = depreciation_df['scenario'].unique()
+        es_choices = depreciation_df['eco_service'].unique()
         
         # Load holder-instrument data
         shs_holder_df = data_loader.load_shs_holder_data()
+
+        # Calculate impacts for each holder/scenario/ES
+        shs_results = []
+        final_results_SHS = pd.DataFrame()
         
-        # Select relevant columns from financial impacts
-        merge_cols = ['PERIOD', 'IDENTIFIER', 'INSTR_CLASS', 'ISSUER_COUNTRY',
-                     'ISSUER_SECTOR', 'Scenario', 'Eco_serv']
-        impact_subset = financial_impacts[merge_cols + 
-                                         ['p_var', 'Security_type', 
-                                          'resid_mat_yr', 'nace_lvl1']]
-        
-        # Merge with holder data
-        shs_results = impact_subset.merge(
-            shs_holder_df,
-            on=['PERIOD', 'IDENTIFIER'],
-            how='left'
-        )
-        
-        # Calculate value loss
-        shs_results['VALUE_LOSS'] = shs_results['p_var'] * shs_results['OBS_VALUE']
-        
-        # Select and aggregate
-        result_cols = ['HOLDER_SECTOR', 'HOLDER_AREA', 'Security_type', 
-                      'nace_lvl1', 'ISSUER_COUNTRY', 'VALUE_LOSS', 
-                      'OBS_VALUE', 'Eco_serv', 'Scenario']
-        
-        shs_results = shs_results[result_cols].groupby(
-            ['HOLDER_SECTOR', 'HOLDER_AREA', 'Security_type', 
-             'nace_lvl1', 'ISSUER_COUNTRY', 'Eco_serv', 'Scenario'],
-            as_index=False
-        ).sum()
-        
-        # Save results
-        output_file = config.RESULTS_PATH / 'shs_2024-Q4_results.csv'
-        shs_results.to_csv(output_file, index=False)
-        logger.info(f"Saved SHS results to {output_file}")
-        
-        return shs_results
+        for scenario, es in product(scenario_choices, es_choices): # scenario = '1_World_shock_3perc_02_GOVonNFC' ; es = 'Water purification'
+            logger.info(f"Processing scenario: {scenario}, ES: {es}")
+            
+            # Prepare data for this scenario
+            instrmnt_loop = instrmnt_clean[
+                (instrmnt_clean['scenario'] == scenario) &
+                (instrmnt_clean['eco_service'] == es)
+            ]
+                        
+            # Calculate financial impacts
+            financial_impacts = financial.calculate_instrument_impacts(instrmnt_loop)
+            # financial_impacts[financial_impacts['Security_type']!='Equity']
+
+            # Select relevant columns from financial impacts
+            merge_cols = ['IDENTIFIER', 'INSTR_CLASS', 'ISSUER_COUNTRY',
+                        'nace_lvl4', 'nace_lvl2', 'nace_lvl', 'scenario', 'eco_service']
+            impact_subset = financial_impacts[merge_cols + ['p_var', 'Security_type']]
+            # financial_impacts.columns
+            # Merge with holder data
+            shs_results = impact_subset.merge(
+                shs_holder_df,
+                on=['IDENTIFIER'],
+                how='left'
+            )
+            
+            # Calculate value loss
+            shs_results['VALUE_LOSS'] = shs_results['p_var'] * shs_results['OBS_VALUE']
+            
+            # Select and aggregate
+            result_cols = ['HOLDER_SECTOR', 'HOLDER_AREA',
+                            'INSTR_CLASS', 'ISSUER_COUNTRY',
+                            'nace_lvl2', 'scenario', 'eco_service']         
+            
+            shs_results = shs_results[result_cols+['VALUE_LOSS','OBS_VALUE'] ].groupby(result_cols,  as_index=False).sum()
+            final_results_SHS = pd.concat( [shs_results, final_results_SHS] , ignore_index=True)
+
+        return final_results_SHS
     
     def run_full_pipeline(self, create_plots: bool = True):
         """

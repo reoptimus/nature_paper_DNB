@@ -114,29 +114,9 @@ def example_5_depreciation_calculation():
     pipeline_SHS.instrmnt_df
     dir(pipeline_SHS)
     # Calculate depreciation for this specific case
-    SHS_dep_df = pipeline_SHS.calculate_instrument_depreciations()
+    SHS_dep_df = pipeline_SHS.calculate_financial_impacts()
 
-    # test to delete
-    eco_services = config.ECO_SERVICES if hasattr(config, 'ECO_SERVICES') else pipeline_anacredit.eco_services
-    depreciation_df = vulnerability.calculate_all_deltaPD(
-        pipeline_SHS.vuln_df,
-        pipeline_SHS.instrmnt_df,
-        pipeline_SHS.alpha_df,
-        eco_services,
-        pipeline_SHS.scenarios,
-        pipeline_SHS.nace_map,
-        config.AGGREG_TYPE,
-        config.DEPENDENCY_TYPE,
-        n_jobs=-1)
     
-    vulnerability.calculate_deltaPD(pipeline_SHS.vuln_df,
-                          pipeline_SHS.vuln_df,
-                          pipeline_SHS.alpha_df,
-                          eco_services[0],
-                          pipeline_SHS.scenarios[0],
-                          config.AGGREG_TYPE,
-                          pipeline_SHS.nace_map,
-                          config.DEPENDENCY_TYPE)
 
     from nature_analysis.pipeline import AnaCreditAnalysisPipeline
     pipeline_anacredit = AnaCreditAnalysisPipeline()

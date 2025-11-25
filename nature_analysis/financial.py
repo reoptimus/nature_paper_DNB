@@ -2,6 +2,7 @@
 Financial modeling functions for PD, LGD, and price variations
 """
 import numpy as np
+import scipy.stats as stats
 from scipy.stats import norm
 from . import config
 
@@ -77,12 +78,15 @@ def calculate_risky_bond_price(duration: float,
     Returns:
         Risky bond price
     """
+    # condition to clean missing duration with conservative value
+    # Replace NaN with 1
+    duration = duration.fillna(1)
+
     rate_sum = rff + pd
     exp_term = np.exp(-rate_sum * duration)
     
     price = 1 + (coupon - rff - pd * lgd) * (1 - exp_term) / rate_sum
     return price
-
 
 def calculate_bond_price_variation(duration: float,
                                    pd: float,
@@ -99,20 +103,14 @@ def calculate_bond_price_variation(duration: float,
         Percentage price change (clipped to [-1, 1])
     """
     price_initial = calculate_risky_bond_price(duration, pd, lgd, coupon, rff)
-    price_final = calculate_risky_bond_price(
-        duration, 
-        pd + delta_pd, 
-        lgd + delta_lgd, 
-        coupon, 
-        rff + delta_rff
-    )
+    price_final = calculate_risky_bond_price(duration, pd + delta_pd, lgd + delta_lgd, coupon, rff + delta_rff )
     
     variation = (price_final - price_initial) / price_initial
-    return np.clip(variation, -1, 1)
+    return variation
 
 
-def calculate_equity_price_variation(dd: float,
-                                     dd_loss: float,
+def calculate_equity_price_variation(pd: float,
+                                     delta_pd: float,
                                      sigma: float,
                                      r: float = config.RISK_FREE_RATE) -> float:
     """
@@ -127,6 +125,8 @@ def calculate_equity_price_variation(dd: float,
     Returns:
         Percentage price change (clipped to [-1, 1])
     """
+    dd = norm.ppf( pd )
+    dd_loss = norm.ppf(pd + delta_pd)
     # Initial price components
     initial_numerator = (np.exp(sigma * dd) * norm.cdf(dd) - 
                         np.exp(-r) * norm.cdf(dd - sigma))
@@ -139,12 +139,7 @@ def calculate_equity_price_variation(dd: float,
     return np.clip(variation, -1, 1)
 
 
-def calculate_loan_fair_value_impacts(df,
-                                pd_col='pd',
-                                depreciation_col='delta_PD',
-                                maturity_col='resid_mat_yr',
-                                instr_class_col='INSTR_CLASS',
-                                equity_class='F_511'):
+def calculate_instrument_impacts(df,equity_class='F_511'):
     """
     Calculate all financial impacts (PD, LGD, price variations) for instruments.
     
@@ -157,43 +152,33 @@ def calculate_loan_fair_value_impacts(df,
     """
     result = df.copy()
     
-    
     # Calculate initial LGD
-    result['lgd'] = calculate_lgd(result[pd_col])
-    
-    # Calculate PD after loss
-    dd_initial = pd_to_dd(result[pd_col])
-    dd_after_loss = calculate_dd_with_loss(
-        dd_initial,
-        -result[depreciation_col],  # Negative because it's a loss
-        result['sigma']
-    )
-    result['pd_loss'] = dd_to_pd(dd_after_loss)
-    
+    result['lgd'] = calculate_lgd(result['pd'])
+     
     # Calculate LGD after loss
-    result['lgd_loss'] = calculate_lgd(result['pd_loss'])
+    result['lgd_loss'] = calculate_lgd(result['pd']+result['delta_PD'])
     
     # Calculate bond price variation (for non-equity)
     result['bp_var'] = np.where(
-        result[instr_class_col] == equity_class,
+        result['INSTR_CLASS'] == equity_class,
         np.nan,
         calculate_bond_price_variation(
-            result[maturity_col],
-            result[pd_col],
+            result['resid_mat_yr'],
+            result['pd'],
             result['lgd'],
-            delta_pd=result['pd_loss'] - result[pd_col],
+            result['delta_PD'],
             delta_lgd=result['lgd_loss'] - result['lgd']
         )
     )
     
     # Calculate equity price variation
     result['ep_var'] = np.where(
-        result[instr_class_col] != equity_class,
+        result['INSTR_CLASS'] != equity_class,
         np.nan,
         calculate_equity_price_variation(
-            dd_initial,
-            dd_after_loss,
-            result['sigma']
+            result['pd'],
+            result['delta_PD'],
+            result['vol']
         )
     )
     
