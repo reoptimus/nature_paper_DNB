@@ -539,6 +539,29 @@ SHS_HOLDER_FILE = 'G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/SHS/F_511_31_3
 
 ## 🔄 Vulnerability Data Generation (Optional)
 
+### 🌟 KEY FEATURE: One-Command Vulnerability Regeneration
+
+**Generate vulnerability tables for ALL scenarios with a single function call:**
+
+```python
+import nature_analysis
+
+# Automatically processes ALL scenario configs in data/DS_Vuln_update/config_store/
+shapes = nature_analysis.regenerate_vulnerability_files()
+```
+
+**What it does:**
+1. 🔍 **Automatically discovers** all `config_*.py` files in `data/DS_Vuln_update/config_store/`
+2. 🔄 **Processes each scenario** (World 10%, EU 3%, custom scenarios, etc.)
+3. 📊 **Generates vulnerability scores** from ENCORE + EXIOBASE + ND-GAIN data
+4. 💾 **Outputs two files:**
+   - `Vuln_final.csv` - Vulnerability scores for all scenarios
+   - `Alpha_final.xlsx` - Shock parameters for all scenarios
+
+**No instrument data needed!** This workflow is completely independent of SHS/AnaCredit financial analysis.
+
+---
+
 ### Two Workflows
 
 The package supports two workflows for handling vulnerability data:
@@ -546,17 +569,18 @@ The package supports two workflows for handling vulnerability data:
 | Workflow | Description | Time | When to Use |
 |----------|-------------|------|-------------|
 | **Standard** (Recommended) | Use pre-generated `Vuln_final.csv` and `Alpha_final.xlsx` | Minutes | Regular portfolio analysis |
-| **Regeneration** (Optional) | Generate vulnerability files from ENCORE/EXIOBASE/ND-GAIN | 10-30 min | Updating underlying vulnerability data |
+| **Regeneration** (Key Feature) | Generate vulnerability files from ENCORE/EXIOBASE/ND-GAIN | 10-30 min | Updating underlying vulnerability data |
 
-**💡 Key Advantage:** Vulnerability generation is **completely independent** of financial analysis. You can:
-- ✅ Generate vulnerability tables without any SHS or AnaCredit instrument data
-- ✅ Test different scenario configurations (5%, 10%, 15% shocks) separately
-- ✅ Update to new ENCORE/EXIOBASE releases without re-processing portfolios
-- ✅ Create custom shock parameters for research purposes
+### 💡 Why This Is Powerful
 
-This separation means vulnerability scores are **scenario-specific** but **instrument-agnostic** – they describe sector-country-ecosystem relationships, not individual securities.
+Vulnerability generation is **completely independent** of financial analysis. You can:
+- ✅ **No instrument data required** - Generate vulnerability tables without any SHS or AnaCredit data
+- ✅ **Automatic scenario discovery** - Just add `config_*.py` files, function finds them all
+- ✅ **Test multiple scenarios** - 5%, 10%, 15% shocks, different rating mappings, regional variations
+- ✅ **Update data independently** - New ENCORE/EXIOBASE releases without re-processing portfolios
+- ✅ **Rapid scenario testing** - Add new scenario config (62 lines), regenerate in 10-30 min
 
-**Example:** Run `python examples/vulnerability_generation.py` to generate vulnerability tables independently, then use them with any instrument dataset.
+**Key Insight:** Vulnerability scores are **scenario-specific** but **instrument-agnostic** – they describe sector-country-ecosystem relationships, not individual securities. Generate once, use with any instrument dataset.
 
 ### Standard Workflow: Using Pre-Generated Files
 
@@ -591,27 +615,40 @@ The vulnerability files (`Vuln_final.csv` and `Alpha_final.xlsx`) contain sector
 
 ### How to Regenerate Vulnerability Files
 
-**Method 1: Using the convenience function**
+#### 🎯 Method 1: One Function Call (Recommended)
+
+**The simplest way - automatically processes all scenarios:**
 
 ```python
 import nature_analysis
 
-# Regenerate from ENCORE, EXIOBASE, and ND-GAIN raw data
+# That's it! Automatically discovers and processes ALL config files
 shapes = nature_analysis.regenerate_vulnerability_files()
 
-print(f"Generated Alpha file: {shapes['alpha']}")
-print(f"Generated Vuln file: {shapes['vuln']}")
+print(f"Generated Alpha file: {shapes['alpha']}")  # (rows, cols)
+print(f"Generated Vuln file: {shapes['vuln']}")    # (rows, cols)
 ```
 
-**Method 2: Using the example script**
+**What happens automatically:**
+- ✅ Discovers all `config_*.py` files in `data/DS_Vuln_update/config_store/`
+- ✅ For each config: Loads ENCORE → Builds Leontief matrix → Calculates DS/Vuln → Generates Alpha
+- ✅ Merges all scenarios into `Vuln_final.csv` and `Alpha_final.xlsx`
+- ✅ Returns file shapes for verification
+
+**Time:** 10-30 minutes depending on number of scenarios (e.g., 4 scenarios ≈ 15-20 min)
+
+#### Method 2: Interactive Example Script
 
 ```bash
 python examples/vulnerability_generation.py
 ```
 
-**Method 3: See detailed example**
+Provides step-by-step guidance, configuration validation, and progress indicators.
+
+#### Method 3: See Usage Examples
 
 ```bash
+# Show how to use stored vulnerability files
 python examples/using_stored_vulnerabilities.py
 ```
 
