@@ -5,17 +5,6 @@ import numpy as np
 from scipy.stats import norm
 from . import config
 
-
-def pd_to_dd(pd: float) -> float:
-    """Convert probability of default to distance to default."""
-    return -norm.ppf(pd)
-
-
-def dd_to_pd(dd: float) -> float:
-    """Convert distance to default to probability of default."""
-    return norm.cdf(-dd)
-
-
 def calculate_asset_volatility(dd: float, vol: float, debt_ratio: float) -> float:
     """
     Derive asset volatility from stock price volatility, DD, and debt ratio.
@@ -150,11 +139,9 @@ def calculate_equity_price_variation(dd: float,
     return np.clip(variation, -1, 1)
 
 
-def calculate_instrument_impacts(df,
+def calculate_loan_fair_value_impacts(df,
                                 pd_col='pd',
-                                vol_col='vol',
-                                debt_ratio_col='debt_ratio',
-                                depreciation_col='Depreciation',
+                                depreciation_col='delta_PD',
                                 maturity_col='resid_mat_yr',
                                 instr_class_col='INSTR_CLASS',
                                 equity_class='F_511'):
@@ -170,12 +157,6 @@ def calculate_instrument_impacts(df,
     """
     result = df.copy()
     
-    # Calculate asset volatility
-    result['sigma'] = calculate_asset_volatility(
-        pd_to_dd(result[pd_col]),
-        result[vol_col],
-        result[debt_ratio_col]
-    )
     
     # Calculate initial LGD
     result['lgd'] = calculate_lgd(result[pd_col])

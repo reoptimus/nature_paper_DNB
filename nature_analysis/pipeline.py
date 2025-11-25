@@ -10,9 +10,16 @@ import logging
 
 from . import config
 from . import data_loader
-from . import vulnerability as vulnerability_calc
+from . import vulnerability
 from . import financial as financial_models
 from . import visualization
+
+from nature_analysis import (
+    pipeline,
+    vulnerability,
+    config,
+    data_loader
+)
 
 # Set up logging
 logging.basicConfig(
@@ -72,16 +79,16 @@ class SHSAnalysisPipeline:
     
     def calculate_instrument_depreciations(self) -> pd.DataFrame:
         """
-        Calculate depreciations for all instruments across all scenarios.
+        Calculate delta_PD for all instruments across all scenarios.
         
-        Returns DataFrame with depreciation columns for each scenario/ES combination.
+        Returns DataFrame with delta PDs columns for each scenario/ES combination.
         """
         logger.info("Calculating instrument depreciations...")
         
         # Use configured eco services or all available
         eco_services = config.ECO_SERVICES if hasattr(config, 'ECO_SERVICES') else self.eco_services
         
-        depreciation_df = vulnerability_calc.calculate_all_depreciations(
+        depreciation_df = vulnerability.calculate_all_deltaPD(
             self.vuln_df,
             self.instrmnt_df,
             self.alpha_df,
@@ -102,7 +109,7 @@ class SHSAnalysisPipeline:
 
     def calculate_instrument_depreciations_light(self, n_instruments: int = 100) -> pd.DataFrame:
         """
-        Lightweight version: Calculate depreciations for limited instruments and scenarios.
+        Lightweight version: Calculate delta_PD for limited instruments and scenarios.
 
         This method is designed for quick testing and demonstration purposes.
         It uses only:
@@ -114,7 +121,7 @@ class SHSAnalysisPipeline:
             n_instruments: Number of instruments to process (default: 100)
 
         Returns:
-            DataFrame with depreciation column for the limited scenario
+            DataFrame with delta PDs column for the limited scenario
         """
         logger.info(f"Calculating lightweight depreciations (first {n_instruments} instruments)...")
 
@@ -131,7 +138,7 @@ class SHSAnalysisPipeline:
         instrmnt_subset = self.instrmnt_df.head(n_instruments).copy()
 
         # Calculate depreciation for the single scenario/ES combination
-        depreciation_df = vulnerability_calc.calculate_depreciation(
+        depreciation_df = vulnerability_calc.calculate_deltaPD(
             self.vuln_df,
             instrmnt_subset,
             self.alpha_df,
@@ -149,7 +156,7 @@ class SHSAnalysisPipeline:
             depreciation_df
         ], axis=1)
 
-        logger.info(f"Lightweight depreciation calculation complete: {final_df.shape}")
+        logger.info(f"Lightweight delta_PD calculation complete: {final_df.shape}")
 
         return final_df
 
@@ -434,9 +441,11 @@ class AnaCreditAnalysisPipeline:
 
         return depreciation_df
 
-    def calculate_instrument_depreciations_light(self, n_instruments: int = 100) -> pd.DataFrame:
+    def calculate_prudential_depreciations_light(self, n_instruments: int = 100) -> pd.DataFrame:
         """
         Lightweight version: Calculate depreciations for limited AnaCredit instruments.
+        Load instrument, vulnerability, alpha and COREP
+        Calculate EL, RWA losses and finally CET1 variation per bank (Anacredit)
 
         Args:
             n_instruments: Number of instruments to process (default: 100)
@@ -444,7 +453,7 @@ class AnaCreditAnalysisPipeline:
         Returns:
             DataFrame with depreciation column for the limited scenario
         """
-        logger.info(f"Calculating lightweight AnaCredit depreciations (first {n_instruments} instruments)...")
+        logger.info(f"Calculating lightweight AnaCredit EL RWA variation (first {n_instruments} instruments)...")
 
         # Use configured eco services or all available
         eco_services = config.ECO_SERVICES if hasattr(config, 'ECO_SERVICES') else self.eco_services
@@ -458,8 +467,8 @@ class AnaCreditAnalysisPipeline:
         # Limit instruments to first n_instruments
         instrmnt_subset = self.instrmnt_df.head(n_instruments).copy()
 
-        # Calculate depreciation for the single scenario/ES combination
-        depreciation_df = vulnerability_calc.calculate_anacredit_depreciation(
+        # Calculate EL and RWA variation for the single scenario/ES combination
+        depreciation_df = vulnerability_calc.calculate_anacredit_prudential_losses(
             self.vuln_df,
             instrmnt_subset,
             self.alpha_df,

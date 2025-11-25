@@ -1,0 +1,83 @@
+# code file to test COREP data extract and calculation of EL / RWA
+# based on 2024 EDSI paper code
+# to be integrated in the final structure
+# and then deleted
+# Seb, 24/11/2025
+
+import pandas as pd
+import numpy as np
+from pathlib import Path
+# pipeline_anacredit line by line with Vuln, alpha, adj_ind, vol
+from nature_analysis import (
+    pipeline,
+    vulnerability,
+    config,
+    data_loader
+)
+from nature_analysis.pipeline import AnaCreditAnalysisPipeline
+pipeline_anacredit = AnaCreditAnalysisPipeline()
+pipeline_anacredit.load_all_data()
+
+
+SECURED_DRIVE_PATH = Path('G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/')
+# COREP
+COREP_FILE = SECURED_DRIVE_PATH / 'COREP/corep_extract_date_2024_12_31.csv'
+corep_df = pd.read_csv(COREP_FILE)
+corep_df.columns
+############## addition of corep data #####################
+corep_df.rename(columns={'institution_name':'institution_name_corep','consolidation_code':'IND_CON'}, inplace=True)
+corep_df[['riad_code','IND_CON']]
+
+# Filter rows where same RIAD code for INDividual and CONsolidated institution, then keep conso == 'ind'
+corep_filtered = corep_df[corep_df['IND_CON'] == 'ind']
+
+dir(pipeline_anacredit)
+pipeline_anacredit.alpha_df
+pipeline_anacredit.instrmnt_df
+pipeline_anacredit.vuln_df
+pipeline_anacredit.eco_services
+
+ecosyst_list = pipeline_anacredit.eco_services
+# LGD_option = imp.LGD.iloc[1]
+corep_df_= corep_filtered
+shock_alpha_= pipeline_anacredit.alpha_df['Vuln_type'].unique()
+y_n_RWA= 'y'
+M_=5
+option_calcul_ = pipeline_anacredit.alpha_df['option'].unique()
+
+# merge of instrument (Vuln, Amount, NACE) with
+#  - alpha per nace/es/country/scenatio/options
+#  - vuln, vol, adj_ind per nace/es/country/scenatio/options
+#  - COREP per institution
+
+Loans_lines = pipeline_anacredit.instrmnt_df[['PERIOD', 'Credtr_IDENTIFIER','nace_lvl4', 'ISSUER_COUNTRY', 'pd', 'OUTSTANDING_AMOUNT',
+       'Credtr_SECTOR', 'nace_lvl2', 'INSTR_CLASS', 'vol', 'debt_ratio']]
+
+
+vuln_df_=pipeline_anacredit.vuln_df
+
+alpha_ = pipeline_anacredit.alpha_df.copy()
+# transformation to correspond o Vuln_type but should be deleted after cleaner definition
+alpha_['Vuln_type'] = alpha_['Vuln_type'] + '_' + alpha_['option']
+alpha_ = alpha_.drop(columns=['option'])
+alpha_.rename(columns={'scenario': 'eco_serv', 'ISSUER_COUNTRY': 'region'}, inplace=True)
+
+
+
+merged_df = pipeline_anacredit.vuln_df.merge(
+    alpha_,
+    on=['region', 'eco_serv', 'Vuln_type'],
+    how = 'left' )
+
+
+vuln_df= pipeline_anacredit.vuln_df
+instrmnt_df=pipeline_anacredit.instrmnt_df
+alpha_df=pipeline_anacredit.alpha_df
+eco_service=pipeline_anacredit.eco_services
+scenario=pipeline_anacredit.scenarios
+option=config.AGGREG_TYPE
+nace_map=pipeline_anacredit.nace_map   
+dep_type= config.DEPENDENCY_TYPE
+
+# to run the function
+vulnerability.calculate_anacredit_prudential_losses(vuln_df ,instrmnt_df, alpha_df, eco_service, scenario, option, nace_map, dep_type)

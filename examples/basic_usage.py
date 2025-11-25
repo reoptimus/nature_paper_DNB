@@ -7,6 +7,11 @@ NOTE: To use this package, ensure you have the required dependencies:
 
 The package is now organized as 'nature_analysis'.
 """
+import pandas as pd
+import numpy as np
+from pathlib import Path
+from itertools import product
+import logging
 
 def example_1_simple_usage():
     """Simplest way to run the pipeline."""
@@ -107,15 +112,40 @@ def example_5_depreciation_calculation():
     pipeline_SHS = SHSAnalysisPipeline()
     pipeline_SHS.load_all_data()
     pipeline_SHS.instrmnt_df
+    dir(pipeline_SHS)
     # Calculate depreciation for this specific case
     SHS_dep_df = pipeline_SHS.calculate_instrument_depreciations()
+
+    # test to delete
+    eco_services = config.ECO_SERVICES if hasattr(config, 'ECO_SERVICES') else pipeline_anacredit.eco_services
+    depreciation_df = vulnerability.calculate_all_deltaPD(
+        pipeline_SHS.vuln_df,
+        pipeline_SHS.instrmnt_df,
+        pipeline_SHS.alpha_df,
+        eco_services,
+        pipeline_SHS.scenarios,
+        pipeline_SHS.nace_map,
+        config.AGGREG_TYPE,
+        config.DEPENDENCY_TYPE,
+        n_jobs=-1)
+    
+    vulnerability.calculate_deltaPD(pipeline_SHS.vuln_df,
+                          pipeline_SHS.vuln_df,
+                          pipeline_SHS.alpha_df,
+                          eco_services[0],
+                          pipeline_SHS.scenarios[0],
+                          config.AGGREG_TYPE,
+                          pipeline_SHS.nace_map,
+                          config.DEPENDENCY_TYPE)
 
     from nature_analysis.pipeline import AnaCreditAnalysisPipeline
     pipeline_anacredit = AnaCreditAnalysisPipeline()
     pipeline_anacredit.load_all_data()
-    pipeline_anacredit.instrmnt_df.columns
+    # pipeline_anacredit.instrmnt_df.columns
+
     # Calculate depreciation for this specific case
-    Anacred_dep_df = pipeline_anacredit.calculate_instrument_depreciations()
+    Anacred_dep_df = pipeline_anacredit.calculate_prudential_depreciations_light()
+
 
 def example_6_Vulnerability_generator()
     import importlib
