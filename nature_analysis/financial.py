@@ -20,7 +20,6 @@ def calculate_asset_volatility(dd: float, vol: float, debt_ratio: float) -> floa
     """
     return (vol / norm.cdf(dd)) * (1 - debt_ratio)
 
-
 def calculate_dd_with_loss(dd: float, fls: float, sigma: float) -> float:
     """
     Calculate modified distance to default after loss.
@@ -34,7 +33,6 @@ def calculate_dd_with_loss(dd: float, fls: float, sigma: float) -> float:
         Modified distance to default
     """
     return dd - (fls / sigma)
-
 
 def calculate_lgd(pd: float, 
                  pd_calib: float = config.PD_CALIB,
@@ -59,12 +57,11 @@ def calculate_lgd(pd: float,
     
     return norm.cdf(numerator / denominator) / pd
 
-
 def calculate_risky_bond_price(duration: float,
                                pd: float,
                                lgd: float,
-                               coupon: float = config.COUPON,
-                               rff: float = config.RISK_FREE_RATE) -> float:
+                               coupon: float,
+                               rff: float) -> float:
     """
     Calculate risky bond price.
     
@@ -80,7 +77,7 @@ def calculate_risky_bond_price(duration: float,
     """
     # condition to clean missing duration with conservative value
     # Replace NaN with 1
-    duration = duration.fillna(1)
+    #duration = duration.fillna(1)
 
     rate_sum = rff + pd
     exp_term = np.exp(-rate_sum * duration)
@@ -91,11 +88,11 @@ def calculate_risky_bond_price(duration: float,
 def calculate_bond_price_variation(duration: float,
                                    pd: float,
                                    lgd: float,
+                                   delta_pd: float,
+                                   delta_lgd: float,
                                    coupon: float = config.COUPON,
                                    rff: float = config.RISK_FREE_RATE,
-                                   delta_rff: float = config.DELTA_RATE,
-                                   delta_pd: float = 0.0,
-                                   delta_lgd: float = 0.0) -> float:
+                                   delta_rff: float = config.DELTA_RATE  ) -> float:
     """
     Calculate bond price variation due to changes in PD and LGD.
     
@@ -108,11 +105,10 @@ def calculate_bond_price_variation(duration: float,
     variation = (price_final - price_initial) / price_initial
     return variation
 
-
 def calculate_equity_price_variation(pd: float,
                                      delta_pd: float,
                                      sigma: float,
-                                     r: float = config.RISK_FREE_RATE) -> float:
+                                     rff: float = config.RISK_FREE_RATE) -> float:
     """
     Calculate equity price variation using Merton model.
     
@@ -125,21 +121,20 @@ def calculate_equity_price_variation(pd: float,
     Returns:
         Percentage price change (clipped to [-1, 1])
     """
-    dd = norm.ppf( pd )
-    dd_loss = norm.ppf(pd + delta_pd)
+    dd = -norm.ppf( pd )
+    dd_loss = -norm.ppf(pd + delta_pd)
     # Initial price components
     initial_numerator = (np.exp(sigma * dd) * norm.cdf(dd) - 
-                        np.exp(-r) * norm.cdf(dd - sigma))
+                        np.exp(-rff) * norm.cdf(dd - sigma))
     
     # Final price components
     final_numerator = (np.exp(sigma * dd_loss) * norm.cdf(dd_loss) - 
-                      np.exp(-r) * norm.cdf(dd_loss - sigma))
+                      np.exp(-rff) * norm.cdf(dd_loss - sigma))
     
     variation = (final_numerator / initial_numerator) - 1
-    return np.clip(variation, -1, 1)
+    return variation
 
-
-def calculate_instrument_impacts(df,equity_class='F_511'):
+def calculate_prices_impacts(df,equity_class='F_511'):
     """
     Calculate all financial impacts (PD, LGD, price variations) for instruments.
     
@@ -167,7 +162,7 @@ def calculate_instrument_impacts(df,equity_class='F_511'):
             result['pd'],
             result['lgd'],
             result['delta_PD'],
-            delta_lgd=result['lgd_loss'] - result['lgd']
+            result['lgd_loss'] - result['lgd']
         )
     )
     

@@ -11,8 +11,6 @@ from . import config
 def load_SHS_data(file_path: str = config.SHS_INSTRUMENT_FILE) -> pd.DataFrame:
     """Load SHS instrument data with proper dtype specification."""
     SHS_instrmnt = pd.read_csv(file_path, dtype={'nace': 'str'})
-    # to be delteted just for coding test purpose
-    SHS_instrmnt = SHS_instrmnt[1:500]
     return SHS_instrmnt
 
 def load_Anacredit_data(file_path: str = config.ANACREDIT_INSTRUMENT_FILE) -> pd.DataFrame:
@@ -87,11 +85,9 @@ def load_alpha_data(file_path: Path = None,
 
     return alpha_df
 
-
-def load_production_data(file_path: Path = config.X_FILE) -> pd.DataFrame:
+def load_production_data(file_path: Path = config.EXIOBASE_X_VECTOR) -> pd.DataFrame:
     """Load EXIOBASE production data (X)."""
     return pd.read_csv(file_path)
-
 
 def load_nace_mapping(file_path: Path = None, 
                      mapping_type: str = 'detailed') -> pd.DataFrame:
@@ -110,11 +106,9 @@ def load_nace_mapping(file_path: Path = None,
         return pd.read_excel(file_path, engine='openpyxl')
     return pd.read_csv(file_path)
 
-
 def load_shs_holder_data(file_path: str = config.SHS_HOLDER_FILE) -> pd.DataFrame:
     """Load SHS holder-instrument relationship data."""
     return pd.read_csv(file_path)
-
 
 def extract_scenario_info(df: pd.DataFrame) -> Tuple[List[str], List[str], List[str]]:
     """Extract unique scenarios, eco services, and aggregation types from data."""
@@ -128,34 +122,31 @@ def extract_scenario_info(df: pd.DataFrame) -> Tuple[List[str], List[str], List[
     return scenarios, eco_services
 
 
-def prepare_vulnerability_with_alpha(vuln_df: pd.DataFrame, 
-                                     alpha_df: pd.DataFrame) -> pd.DataFrame:
+def prepare_vulnerability_with_alpha(vuln_df_: pd.DataFrame, 
+                                     alpha_df_: pd.DataFrame) -> pd.DataFrame:
     """Merge vulnerability data with alpha shock parameters."""
     
     # Split Vuln_type into base type and option
-    vuln_df = vuln_df.copy()
-    vuln_df['option'] = vuln_df['Vuln_type'].str.rsplit('_', n=1).str[1]
-    vuln_df['Vuln_type'] = vuln_df['Vuln_type'].str.rsplit('_', n=1).str[0]
+    vuln_df_clean = vuln_df_.copy()
+    vuln_df_clean['option'] = vuln_df_clean['Vuln_type'].str.rsplit('_', n=1).str[1]
+    vuln_df_clean['Vuln_type'] = vuln_df_clean['Vuln_type'].str.rsplit('_', n=1).str[0]
     
     # Clean alpha data similarly
-    alpha_clean = alpha_df.copy()
-    alpha_clean['Vuln_type'] = alpha_clean['Vuln_type'].str.rsplit('_', n=1).str[0]
-    alpha_clean['option'] = alpha_clean['Vuln_type'].str.rsplit('_', n=1).str[1]
-    alpha_clean['Vuln_type'] = alpha_clean['Vuln_type'].str.rsplit('_', n=1).str[0]
+    alpha_clean = alpha_df_.copy()
     alpha_clean = alpha_clean.rename(columns={
         'scenario': 'eco_serv',
         'ISSUER_COUNTRY': 'region'
     })
     
     # Merge
-    merged = vuln_df.merge(
+    merged = vuln_df_clean.merge(
         alpha_clean[['Vuln_type', 'eco_serv', 'region', 'option', 'alpha']],
         on=['Vuln_type', 'eco_serv', 'region', 'option'],
         how='left'
     )
     
     # Calculate production loss
-    merged['delta_prod'] = merged['indout'] * merged['Vuln'] * merged['alpha']
+    merged['delta_indout'] = merged['indout'] * merged['Vuln'] * merged['alpha']
     
     return merged
 
@@ -177,3 +168,13 @@ def clean_instrument_maturity(df: pd.DataFrame,
     df.loc[fill_mask, 'resid_mat_yr'] = mean_maturity
     
     return df
+
+def load_COREP_data(file_path: str = config.COREP_FILE) -> pd.DataFrame:
+    """Load COREP data with proper dtype specification."""
+    COREP_data = pd.read_csv(file_path)
+    return COREP_data
+
+def load_S2_ARS_data(file_path: str = config.S2_ARS_FILE) -> pd.DataFrame:
+    """Load COREP data with proper dtype specification."""
+    S2_ARS_data = pd.read_csv(file_path)
+    return S2_ARS_data

@@ -1,5 +1,5 @@
 """
-Visualization functions for SHS analysis results
+Visualization functions for analysis results
 """
 import pandas as pd
 import numpy as np
@@ -170,16 +170,16 @@ def plot_loss_heatmap_by_dimension(results_df: pd.DataFrame,
     """
     # Filter data
     filtered = results_df[
-        (results_df['Eco_serv'] == eco_service) &
-        (results_df['Scenario'] == scenario)
-    ][[dimension_x, dimension_y, 'VALUE_LOSS', 'OBS_VALUE']]
+        (results_df['eco_serv'] == eco_service) &
+        (results_df['Vuln_type'] == scenario)
+    ][[dimension_x, dimension_y, 'delta_indout', 'indout']]
     
     # Aggregate
     agg = filtered.groupby([dimension_x, dimension_y], as_index=False).agg({
-        'VALUE_LOSS': 'sum',
-        'OBS_VALUE': 'sum'
+        'delta_indout': 'sum',
+        'indout': 'sum'
     })
-    agg['Perc_LOSS'] = agg['VALUE_LOSS'] / agg['OBS_VALUE']
+    agg['Perc_LOSS'] = agg['delta_indout'] / agg['indout']
     
     # Select value column and formatting
     if value_type == 'percentage':
@@ -192,8 +192,8 @@ def plot_loss_heatmap_by_dimension(results_df: pd.DataFrame,
         unit = 'eur'
         cmap = 'Reds_r'
         annotation_fmt = lambda x: f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
-    else:  # obs_value
-        value_col = 'OBS_VALUE'
+    else:  # raw industrial production
+        value_col = 'indout'
         unit = 'eur'
         cmap = 'Blues'
         annotation_fmt = lambda x: f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
@@ -222,6 +222,83 @@ def plot_loss_heatmap_by_dimension(results_df: pd.DataFrame,
     return fig
 
 
+def plot_loss_heatmap_by_region(results_df: pd.DataFrame,
+                                   eco_service: str,
+                                   scenario: str,
+                                   dimension_x: str,
+                                   region_list,
+                                   value_type: str = 'percentage',
+                                   output_path: Optional[str] = None) -> plt.Figure:
+    """
+    Create heatmap of losses by two dimensions.
+    
+    Args:
+        results_df: SHS results dataframe
+        eco_service: Ecosystem service filter
+        scenario: Scenario filter
+        dimension_x: Column for x-axis (rows)
+        dimension_y: Column for y-axis (columns)
+        value_type: 'percentage', 'absolute_eur', or 'obs_value'
+        output_path: Optional path to save figure
+    
+    Returns:
+        matplotlib Figure object
+    """
+    # Filter data
+    filtered = results_df[
+        (results_df['eco_serv'] == eco_service) &
+        (results_df['Vuln_type'] == scenario) &
+        (results_df['region'].isin(region_list))
+    ][[dimension_x, 'region', 'delta_indout', 'indout']]
+    
+    # Aggregate
+    agg = filtered.groupby([dimension_x, 'region'], as_index=False).agg({
+        'delta_indout': 'sum',
+        'indout': 'sum'
+    })
+    agg['Perc_LOSS'] = agg['delta_indout'] / agg['indout']
+    
+    # Select value column and formatting
+    if value_type == 'percentage':
+        value_col = 'Perc_LOSS'
+        unit = '%'
+        cmap = 'Reds_r'
+        annotation_fmt = lambda x: f"{x * 100:.2f}%" if pd.notnull(x) else ""
+    elif value_type == 'absolute_eur':
+        value_col = 'VALUE_LOSS'
+        unit = 'eur'
+        cmap = 'Reds_r'
+        annotation_fmt = lambda x: f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
+    else:  # raw industrial production
+        value_col = 'indout'
+        unit = 'eur'
+        cmap = 'Blues'
+        annotation_fmt = lambda x: f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
+    
+    # Pivot and sort
+    pivot_data = agg.pivot(index=dimension_x, columns='region', values=value_col)
+    pivot_data = pivot_data.sort_values(by=pivot_data.columns[0], ascending=True)
+    
+    # Create annotations
+    annotations = pivot_data.map(annotation_fmt)
+    
+    # Create heatmap
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(pivot_data, annot=annotations, fmt="", cmap=cmap, 
+                linewidths=0.5, ax=ax)
+    
+    title = f"Losses in {unit} by {dimension_x} and countries\n({eco_service}, {scenario})"
+    ax.set_title(title)
+    ax.set_xlabel('region')
+    ax.set_ylabel(dimension_x)
+    plt.tight_layout()
+    
+    if output_path:
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    
+    return fig
+
+
 def create_summary_statistics(results_df: pd.DataFrame) -> pd.DataFrame:
     """
     Create summary statistics from results.
@@ -239,3 +316,28 @@ def create_summary_statistics(results_df: pd.DataFrame) -> pd.DataFrame:
                            summary['OBS_VALUE_sum']) * 100
     
     return summary
+
+def create_visualizations(df_results_: pd.DataFrame,
+                          eco_service_: str ,
+                          scenario_: str,
+                          dimension_x: str ,
+                          dimension_y: str ,
+                          value_type: str ='percentage' # 'percentage', 'absolute_eur', or 'obs_value'
+                          ):
+    """Create standard visualization outputs."""                       
+    try:
+        fig = plot_loss_heatmap_by_dimension(
+            df_results_,
+            eco_service_,
+            scenario_,
+            dimension_x,
+            dimension_y,
+            value_type='percentage' # 'percentage', 'absolute_eur', or 'obs_value'
+        )
+        
+        output_path = config.ANALYSIS_PATH / f'heatmap_{eco_service_}_{scenario_}.png'
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
+        print(f"Saved heatmap to {output_path}")
+        
+    except Exception as e:
+        print(f"Could not create visualization: {e}")

@@ -25,14 +25,13 @@ COREP_FILE = SECURED_DRIVE_PATH / 'COREP/RWA_20241231.csv'
 # ARS Solvency 2
 S2_ARS_FILE = SECURED_DRIVE_PATH / 'ARS_solva2/S2ARS_S02_01_31122024.csv'
 # results (also in secured env.)
-RESULTS_PATH = SECURED_DRIVE_PATH / 'results/'
+RESULTS_PATH = SECURED_DRIVE_PATH / 'results'
 ###################################
 
 # File calculated based on ENCORE and EXIOBASE (used by main pipeline)
 # These are the OUTPUT files from vulnerability generation
 VULN_FILE = 'Final_Vuln_file.csv'
 ALPHA_FILE = 'Final_alpha_file.xlsx'
-X_FILE = BASE_PATH / 'downloaded_data/EXIOBASE 3/IOT_2022_ixi/IOT_2022_ixi/x.csv'
 
 # =============================================================================
 # VULNERABILITY GENERATION PARAMETERS
@@ -61,7 +60,6 @@ ADJ_IND_FILE = 'ROE_ROA_debt_ratio per NACE lvl1/Adj_ind_by_industry.xlsx'  # Ad
 AREA_COUNTRY_CODE_FILE = 'regions_ISO2_continent_area.csv'  # ISO2 to area/continent mapping
 
 # =============================================================================
-
 # sector and country correspondance mapping
 NACE_MAP_FILE = DATA_PATH / 'nace_0d_map.xlsx'
 EXIOBASE_NACE_MAP = DATA_PATH / 'EXIOBASE_to_NACElvl2_tab.xlsx'
