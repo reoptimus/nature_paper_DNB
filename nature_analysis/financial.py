@@ -2,6 +2,7 @@
 Financial modeling functions for PD, LGD, and price variations
 """
 import numpy as np
+import pandas as pd
 import scipy.stats as stats
 from scipy.stats import norm
 from . import config
@@ -57,6 +58,9 @@ def calculate_lgd(pd: float,
     
     return norm.cdf(numerator / denominator) / pd
 
+##################################
+# Market losses functions
+##################################
 def calculate_risky_bond_price(duration: float,
                                pd: float,
                                lgd: float,
@@ -192,3 +196,42 @@ def calculate_prices_impacts(df,equity_class='F_511'):
     )
     
     return result
+
+##################################
+# DeltaCET1 functions
+##################################
+def calculate_delta_EL_impacts(df):
+    # LGD and delta_LGD 
+    df['lgd'] = calculate_lgd(df['pd'])
+    df['delta_lgd'] = calculate_lgd((df['pd']+df['delta_PD'])) - df['lgd']
+    df['delta_EL'] = df['OUTSTANDING_AMOUNT'] * ( ((df['pd'] + df['delta_PD'] ) * (df['lgd']+df['delta_lgd']) ) - (df['pd'] * df['lgd']) )
+    return df
+
+def f(x: float , M: float , option_calcul: str): # x is a vector
+    # the formula need to be adapted in case where x > 0.31 (for y=0.42)
+    # option_calcul allow to keep the original formula if = 'base' , and to switch on the option b if ='flat'
+    b = (0.11852 - 0.05478 * np.log(x)) ** 2
+    R = 0.24 - 0.12 * (1 - np.exp(-50 * x)) / (1 - np.exp(-50))
+    term1 = (1 / np.sqrt(1 - R)) * stats.norm.ppf(x) + np.sqrt(R / (1 - R)) * stats.norm.ppf(0.999)
+    term2 = (1 + (M - 2.5) * b) / (1 - 1.5 * b)
+    result = (stats.norm.cdf(term1) - x) * term2
+    if option_calcul == 'base':
+        result = result # keep the original
+    if option_calcul == 'flat':
+        # with a flat aproach. if x> 0.31, f(x) become flat
+        result = np.where(result > 0.31, 0.42 , result )
+    return result
+
+def calculate_delta_RWA_impacts( df: pd.DataFrame , 
+                                M: float, 
+                                option_calcul__: str = 'base') -> pd.DataFrame: 
+    # option can be 'flat' , to flatten the downturn of RWA vs. pd in the regulation
+    # Calculate ∆f(PD) and f(PD)
+    f_PD = f(df['pd'], M , option_calcul__)
+    delta_f_PD = f( df['pd'] + df['delta_PD'] , M , option_calcul__) - f_PD
+    # Calculate ΔRWA where conditions are met
+    df['delta_rwa'] =  12.5 * (delta_f_PD * df['lgd'] + df['delta_lgd'] * f_PD + delta_f_PD * df['delta_lgd']) * df['OUTSTANDING_AMOUNT'] #     delta_rwa.max()
+    # limitation of DeltaRWA to the size of EAD
+    # delta_rwa = delta_rwa.clip(upper=1) * EAD_
+    return df
+

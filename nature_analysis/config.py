@@ -21,7 +21,7 @@ SHS_HOLDER_FILE = SECURED_DRIVE_PATH / 'SHS/F_511_31_32_hldr_instrmnt_2024-Q4_pr
 # AnaCredit instrument data
 ANACREDIT_INSTRUMENT_FILE = SECURED_DRIVE_PATH / 'anacredit_NL/anacredit_df_2024-12-31.csv'
 # COREP
-COREP_FILE = SECURED_DRIVE_PATH / 'COREP/RWA_20241231.csv'
+COREP_FILE = SECURED_DRIVE_PATH / 'COREP/corep_extract_date_2024_12_31.csv'
 # ARS Solvency 2
 S2_ARS_FILE = SECURED_DRIVE_PATH / 'ARS_solva2/S2ARS_S02_01_31122024.csv'
 # results (also in secured env.)

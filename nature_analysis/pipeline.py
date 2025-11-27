@@ -7,6 +7,7 @@ import numpy as np
 from pathlib import Path
 from itertools import product
 import logging
+import importlib
 
 from . import config
 from . import data_loader
@@ -14,13 +15,16 @@ from . import vulnerability
 from . import financial
 from . import visualization
 
-# from nature_analysis import (
-#     pipeline,
-#     vulnerability,
-#     config,
-#     data_loader,
-#      financial
-# )
+from nature_analysis import (
+    pipeline,
+    vulnerability,
+    config,
+    data_loader,
+     financial
+)
+importlib.reload(pipeline)
+importlib.reload(vulnerability)
+importlib.reload(data_loader)
 
 # Set up logging
 logging.basicConfig(
@@ -99,7 +103,7 @@ class SHSAnalysisPipeline:
         
         logger.info(f"Loaded {len(self.scenarios)} scenarios and {len(self.eco_services)} ecosystem services")
         
-        return df_merged
+        return
     
     def calculate_financial_impacts(self) -> pd.DataFrame:
         """
@@ -246,35 +250,59 @@ class AnaCreditAnalysisPipeline:
 
         logger.info(f"Loaded {len(self.scenarios)} scenarios and {len(self.eco_services)} ecosystem services")
 
-    def calculate_instrument_depreciations(self) -> pd.DataFrame:
+        return
+
+    def calculate_delta_CET1(self) -> pd.DataFrame:
         """
         Calculate depreciations for all AnaCredit instruments across all scenarios.
 
         Returns DataFrame with depreciation columns for each scenario/ES combination.
         """
         logger.info("Calculating AnaCredit instrument depreciations...")
+        # self = pipeline_anacredit
+        deltaEL_RWA_results = vulnerability.calculate_PD_EL_RWA_variation(self)
 
-        # Use configured eco services or all available
-        eco_services = config.ECO_SERVICES if hasattr(config, 'ECO_SERVICES') else self.eco_services
-
-        depreciation_df = vulnerability.calculate_all_anacredit_depreciations(
-            self.vuln_df,
-            self.instrmnt_df,
-            self.alpha_df,
-            eco_services,
-            self.scenarios,
-            self.nace_map,
-            config.AGGREG_TYPE,
-            config.DEPENDENCY_TYPE,
-            n_jobs=-1
+        #################################
+        # to be passed to vulnerability.py
+        # aggregation per creditor
+        # Select relevant columns
+        Aggreg_deltaEL_RWA_tabl = deltaEL_RWA_results[ # 'nace_lvl2', 'nace_lvl', 
+            ['Credtr_IDENTIFIER', 'ISSUER_COUNTRY',
+            'scenario', 'eco_service', 'delta_EL', 'delta_rwa', 'OUTSTANDING_AMOUNT']
+        ]
+        # Group by and sum
+        Aggreg_deltaEL_RWA_tabl = (
+            Aggreg_deltaEL_RWA_tabl
+            .groupby(['Credtr_IDENTIFIER', # 'nace_lvl2', 'nace_lvl',
+                    'ISSUER_COUNTRY', 'scenario', 'eco_service'], as_index=False)
+            .sum()
         )
+        #################################
+        # merge with COREP
+        # COREP load
+        COREP_tab = data_loader.load_COREP_data()
+        # Filter rows where same RIAD code for INDividual and CONsolidated institution, then keep conso == 'ind'
+        corep_filtered = COREP_tab[COREP_tab['consolidation_code'] == 'ind'][['institution_name','riad_code','CET1','RWA','cet1_ratio']]
+        # Merge on 'riad_code'
+        merged_df = pd.merge(
+            Aggreg_deltaEL_RWA_tabl,
+            corep_filtered,
+            left_on= 'Credtr_IDENTIFIER',
+            right_on= "riad_code",
+            how="left"   # or "inner" depending on whether you want to keep only matches
+        )
+        CET1_results = merged_df.drop(columns=["riad_code"])
+        CET1_results = CET1_results.dropna(subset=["institution_name"])
+        # delta_CET1 calculation
+        CET1_results['delta_CET1_ratio'] = (CET1_results['CET1'] - CET1_results['delta_EL']) / (CET1_results['RWA'] + CET1_results['delta_rwa']) - CET1_results['cet1_ratio']
 
-        output_file = (config.RESULTS_PATH /
-                      f'merged_AnaCredit_instr_vulnxalpha_scenarios_{config.DEPENDENCY_TYPE}_{config.AGGREG_TYPE}.csv')
-        depreciation_df.to_csv(output_file, index=False)
-        logger.info(f"Saved AnaCredit depreciation data to {output_file}")
+        # result storage
+        # output_file = (config.RESULTS_PATH /
+        #               f'merged_AnaCredit_instr_vulnxalpha_scenarios_{config.DEPENDENCY_TYPE}_{config.AGGREG_TYPE}.csv')
+        # all_delta_PD_df.to_csv(output_file, index=False)
+        # logger.info(f"Saved AnaCredit depreciation data to {output_file}")
 
-        return depreciation_df
+        return CET1_results
 
     def calculate_financial_impacts(self, depreciation_df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -344,64 +372,6 @@ class AnaCreditAnalysisPipeline:
         final_results = pd.concat(results_list, ignore_index=True)
 
         return final_results
-
-    def run_full_pipeline(self, create_plots: bool = False):
-        """
-        Run the complete AnaCredit analysis pipeline.
-
-        Args:
-            create_plots: Whether to generate visualization plots
-        """
-        logger.info("=" * 60)
-        logger.info("Starting AnaCredit Nature Analysis Pipeline")
-        logger.info("=" * 60)
-
-        # Step 1: Load data
-        self.load_all_data()
-
-        # Step 2: Calculate depreciations
-        depreciation_df = self.calculate_instrument_depreciations()
-
-        # Step 3: Calculate financial impacts
-        financial_impacts = self.calculate_financial_impacts(depreciation_df)
-
-        # Step 4: Save results
-        output_file = config.RESULTS_PATH / 'anacredit_financial_impacts.csv'
-        financial_impacts.to_csv(output_file, index=False)
-        logger.info(f"Saved AnaCredit financial impacts to {output_file}")
-
-        logger.info("=" * 60)
-        logger.info("AnaCredit Pipeline completed successfully!")
-        logger.info("=" * 60)
-
-        return financial_impacts
-
-    def run_quick_test(self, n_instruments: int = 100) -> pd.DataFrame:
-        """
-        Run a quick test of the AnaCredit pipeline with limited data.
-
-        Args:
-            n_instruments: Number of instruments to process (default: 100)
-
-        Returns:
-            DataFrame with depreciation results for the limited scenario
-        """
-        logger.info("=" * 60)
-        logger.info(f"Starting AnaCredit Quick Test Pipeline (n={n_instruments} instruments)")
-        logger.info("=" * 60)
-
-        # Step 1: Load data
-        self.load_all_data()
-
-        # Step 2: Calculate depreciations (lightweight)
-        depreciation_df = self.calculate_instrument_depreciations_light(n_instruments)
-
-        logger.info("=" * 60)
-        logger.info("AnaCredit quick test completed successfully!")
-        logger.info(f"Processed {len(depreciation_df)} instruments")
-        logger.info("=" * 60)
-
-        return depreciation_df
 
 
 def main():

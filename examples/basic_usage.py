@@ -12,6 +12,7 @@ import numpy as np
 from pathlib import Path
 from itertools import product
 import logging
+import importlib
 
 from nature_analysis import (
     pipeline,
@@ -20,6 +21,14 @@ from nature_analysis import (
     data_loader,
     visualization
 )
+importlib.reload(pipeline)
+importlib.reload(vulnerability)
+importlib.reload(data_loader)
+
+def case_0_Vulnerability_DS_generator()
+    import importlib
+    import nature_analysis
+    shapes = nature_analysis.regenerate_vulnerability_files()
 
 def case_1_production_losses_EXIOBASE_calculation():
     # Set up logging
@@ -67,36 +76,28 @@ def case_2_market_lossess_SHS_calculation():
     config.RESULTS_PATH / "SHS_Losses_all_scenario_ecosystem.xlsx",
     index=False )
 
+    # to aggregate result at lvl1 level for graph and presentation
+    data_loader.aggregate_shs_losses(
+        config.RESULTS_PATH / "SHS_Losses_all_scenario_ecosystem.xlsx",
+        config.RESULTS_PATH / "SHS_Losses_aggregated_lvl1.xlsx")
+
 def case_3_prudential_lossess_banks_CET1_calculation():
     # CET1 variation due to loans EL and RWA -> based on pd variations
     # import COREP data to re-evaluate CET1 position after pd degradation
     from nature_analysis.pipeline import AnaCreditAnalysisPipeline
     pipeline_anacredit = AnaCreditAnalysisPipeline()
     pipeline_anacredit.load_all_data()
+    pipeline_anacredit.instrmnt_df
 
     # Calculate depreciation for this specific case
-    Anacred_dep_df = pipeline_anacredit.calculate_instrument_depreciations()
+    Anacred_delta_PD_df = pipeline_anacredit.calculate_delta_CET1()
 
-    # calulate delta_EL , delta_RWA based on delta_pd (pd, vuln, maturity, amount ,...)
-    
-    
-    # aggregation per bank
-
-    # COREP EL and RWA merge
-    data_loader.load_COREP_data()
-
-    # delta_CET1 per bank
     
 
 def case_4_prudential_lossess_insurances_SCR_calculation():  
     # SCR variation due to market valuation of assets -> based on pd variations
     # import ARS S2 data to re-evaluate SCR position after pd degradation
     data_loader.load_S2_ARS_data()
-
-def case_0_Vulnerability_DS_generator()
-    import importlib
-    import nature_analysis
-    shapes = nature_analysis.regenerate_vulnerability_files()
 
 
 if __name__ == "__main__":

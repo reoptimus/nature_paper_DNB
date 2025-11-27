@@ -30,7 +30,7 @@ def load_Anacredit_data(file_path: str = config.ANACREDIT_INSTRUMENT_FILE) -> pd
     anacredit_instrmnt = anacredit_instrmnt.merge(debt_ratio_lvl2, left_on= 'nace_level_2', right_on = 'nace_lvl2', how = 'left' , validate='m:1')
     anacredit_instrmnt = anacredit_instrmnt.drop(columns=['nace_lvl2'])
     # to be delteted just for coding test purpose
-    anacredit_instrmnt = anacredit_instrmnt[1:500]
+    anacredit_instrmnt = anacredit_instrmnt[1:2000]
     return anacredit_instrmnt
 
 def load_vulnerability_data(file_path: Path = None) -> pd.DataFrame:
@@ -178,3 +178,39 @@ def load_S2_ARS_data(file_path: str = config.S2_ARS_FILE) -> pd.DataFrame:
     """Load COREP data with proper dtype specification."""
     S2_ARS_data = pd.read_csv(file_path)
     return S2_ARS_data
+
+import pandas as pd
+
+def aggregate_shs_losses(input_path, output_path):
+    """
+    Aggregates SHS losses for ease of analysis and data presentation.
+
+    Steps:
+    1. Read the Excel file from input_path.
+    2. Withdraw (drop) columns ['INSTR_CLASS', 'nace_lvl2', 'loss_perc'].
+    3. Identify all remaining columns except the ones to aggregate.
+    4. Aggregate VALUE_LOSS and OBS_VALUE by all other columns.
+    5. Save the aggregated results to output_path.
+    """
+    # 1. Read the file back
+    df = pd.read_excel(input_path)
+
+    # 2. Withdraw (drop) the listed columns
+    df_subset = df.drop(columns=['INSTR_CLASS', 'nace_lvl2', 'loss_perc'])
+
+    # 3.1 Identify all columns except the ones to aggregate
+    group_cols = [col for col in df_subset.columns if col not in ['VALUE_LOSS', 'OBS_VALUE']]
+
+    # 3.2 Aggregate VALUE_LOSS and OBS_VALUE by all other columns
+    agg_df = df.groupby(group_cols, as_index=False).agg({
+        'VALUE_LOSS': 'sum',
+        'OBS_VALUE': 'sum'
+    })
+
+    # 4. Save the aggregated results
+    agg_df.to_excel(output_path, index=False)
+    # Example usage:
+    # aggregate_shs_losses(
+    #     config.RESULTS_PATH / "SHS_Losses_all_scenario_ecosystem.xlsx",
+    #     config.RESULTS_PATH / "SHS_Losses_aggregated_lvl1.xlsx")
+    return agg_df
