@@ -266,15 +266,15 @@ class AnaCreditAnalysisPipeline:
         # to be passed to vulnerability.py
         # aggregation per creditor
         # Select relevant columns
-        Aggreg_deltaEL_RWA_tabl = deltaEL_RWA_results[ # 'nace_lvl2', 'nace_lvl', 
-            ['Credtr_IDENTIFIER', 'ISSUER_COUNTRY',
+        Aggreg_deltaEL_RWA_tabl = deltaEL_RWA_results[  
+            ['Credtr_IDENTIFIER', #'ISSUER_COUNTRY', 'nace_lvl2', 'nace_lvl',
             'scenario', 'eco_service', 'delta_EL', 'delta_rwa', 'OUTSTANDING_AMOUNT']
         ]
         # Group by and sum
         Aggreg_deltaEL_RWA_tabl = (
             Aggreg_deltaEL_RWA_tabl
-            .groupby(['Credtr_IDENTIFIER', # 'nace_lvl2', 'nace_lvl',
-                    'ISSUER_COUNTRY', 'scenario', 'eco_service'], as_index=False)
+            .groupby(['Credtr_IDENTIFIER', # 'nace_lvl2', 'nace_lvl', 'ISSUER_COUNTRY',
+                     'scenario', 'eco_service'], as_index=False)
             .sum()
         )
         #################################
@@ -297,10 +297,10 @@ class AnaCreditAnalysisPipeline:
         CET1_results['delta_CET1_ratio'] = (CET1_results['CET1'] - CET1_results['delta_EL']) / (CET1_results['RWA'] + CET1_results['delta_rwa']) - CET1_results['cet1_ratio']
 
         # result storage
-        # output_file = (config.RESULTS_PATH /
-        #               f'merged_AnaCredit_instr_vulnxalpha_scenarios_{config.DEPENDENCY_TYPE}_{config.AGGREG_TYPE}.csv')
-        # all_delta_PD_df.to_csv(output_file, index=False)
-        # logger.info(f"Saved AnaCredit depreciation data to {output_file}")
+        output_file = (config.RESULTS_PATH /
+                      f'Anacredit_delta_CET1_results_{config.DEPENDENCY_TYPE}_{config.AGGREG_TYPE}.csv')
+        CET1_results.to_csv(output_file, index=False)
+        logger.info(f"Saved AnaCredit depreciation data to {output_file}")
 
         return CET1_results
 

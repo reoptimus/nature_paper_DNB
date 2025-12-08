@@ -30,7 +30,7 @@ def load_Anacredit_data(file_path: str = config.ANACREDIT_INSTRUMENT_FILE) -> pd
     anacredit_instrmnt = anacredit_instrmnt.merge(debt_ratio_lvl2, left_on= 'nace_level_2', right_on = 'nace_lvl2', how = 'left' , validate='m:1')
     anacredit_instrmnt = anacredit_instrmnt.drop(columns=['nace_lvl2'])
     # to be delteted just for coding test purpose
-    anacredit_instrmnt = anacredit_instrmnt[1:2000]
+    # anacredit_instrmnt = anacredit_instrmnt[1:2000]
     return anacredit_instrmnt
 
 def load_vulnerability_data(file_path: Path = None) -> pd.DataFrame:

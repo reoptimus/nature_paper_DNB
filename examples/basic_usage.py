@@ -87,7 +87,7 @@ def case_3_prudential_lossess_banks_CET1_calculation():
     from nature_analysis.pipeline import AnaCreditAnalysisPipeline
     pipeline_anacredit = AnaCreditAnalysisPipeline()
     pipeline_anacredit.load_all_data()
-    pipeline_anacredit.instrmnt_df
+    # pipeline_anacredit.instrmnt_df
 
     # Calculate depreciation for this specific case
     Anacred_delta_PD_df = pipeline_anacredit.calculate_delta_CET1()
@@ -98,6 +98,10 @@ def case_4_prudential_lossess_insurances_SCR_calculation():
     # SCR variation due to market valuation of assets -> based on pd variations
     # import ARS S2 data to re-evaluate SCR position after pd degradation
     data_loader.load_S2_ARS_data()
+
+    # import market losses per banks
+
+    # calculate SCR variation
 
 
 if __name__ == "__main__":
