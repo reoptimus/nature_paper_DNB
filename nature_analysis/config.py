@@ -87,11 +87,15 @@ COUNTRY_LIST = ['NL', 'AT', 'BE', 'DE', 'ES', 'FI', 'FR', 'GR', 'HR', 'IT',
 # Financial parameters
 RISK_FREE_RATE = 0.02
 CORRELATION_RHO = 0.1
-PD_CALIB = 0.0459
-LGD_CALIB = 0.652
-DELTA_RATE = 0.00
-COUPON = 0.02
-MAX_MATURITY = 30  # years
+PD_CALIB = 0.0459 # LGD model parameter from Frye and Jacobs approximation function
+LGD_CALIB = 0.652 # LGD model parameter from Frye and Jacobs approximation function
+DELTA_RATE = 0.00 # for an interest curve shift
+COUPON = 0.02 # assumption for the bond price variation
+MAX_MATURITY = 30  # maturity max in years for data cleaning
+
+# model options
+RWA_calc_option = 'flat' # 'flat' or 'base'  ; regulation function f for PD drop after a maximum in the regulation
+EL_calc_option = 'no' # 'yes' or 'no'  ; recalculation of LGD after PD variation (base on Frye and Jacobs approximation function, reference in EDSI paper)
 
 # Visualization defaults
 DEFAULT_COLORMAP = 'BrBG'

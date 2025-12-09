@@ -200,10 +200,13 @@ def calculate_prices_impacts(df,equity_class='F_511'):
 ##################################
 # DeltaCET1 functions
 ##################################
-def calculate_delta_EL_impacts(df):
+def calculate_delta_EL_impacts(df, option_lgd_recalc : str = 'yes'):
     # LGD and delta_LGD 
     df['lgd'] = calculate_lgd(df['pd'])
-    df['delta_lgd'] = calculate_lgd((df['pd']+df['delta_PD'])) - df['lgd']
+    if option_lgd_recalc == 'yes': # recalculation of LGD according to PD variation
+        df['delta_lgd'] = calculate_lgd((df['pd']+df['delta_PD'])) - df['lgd']
+    else : # no LGD recalculation
+        df['delta_lgd'] = 0
     df['delta_EL'] = df['OUTSTANDING_AMOUNT'] * ( ((df['pd'] + df['delta_PD'] ) * (df['lgd']+df['delta_lgd']) ) - (df['pd'] * df['lgd']) )
     return df
 

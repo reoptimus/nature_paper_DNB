@@ -92,7 +92,6 @@ def case_3_prudential_lossess_banks_CET1_calculation():
     # Calculate depreciation for this specific case
     Anacred_delta_PD_df = pipeline_anacredit.calculate_delta_CET1()
 
-    
 
 def case_4_prudential_lossess_insurances_SCR_calculation():  
     # SCR variation due to market valuation of assets -> based on pd variations
@@ -100,6 +99,7 @@ def case_4_prudential_lossess_insurances_SCR_calculation():
     data_loader.load_S2_ARS_data()
 
     # import market losses per banks
+    
 
     # calculate SCR variation
 
