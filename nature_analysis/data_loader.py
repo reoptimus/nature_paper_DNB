@@ -327,190 +327,6 @@ def aggregate_shs_losses(input_path, output_path):
 #||                                    #||
 ##########################################
 """
-import os
-from enum import Enum
-from io import BytesIO
-from pprint import pprint
-from azure.identity import DefaultAzureCredential, AzureCliCredential
-from azure.storage.filedatalake import DataLakeServiceClient
-from azure.core.exceptions import ResourceModifiedError
-
-
-class LoginMethod(Enum):
-    DEFAULT = DefaultAzureCredential()
-    AZCLI = AzureCliCredential()
-    SAS = os.environ.get("DATALAKE_STORAGE_SAS", None)
-    ACCOUNT_KEY = os.environ.get("DATALAKE_STORAGE_ACCOUNT_KEY", None)
-
-    def get_service_client(self, account_name):
-        self.account_url = f"https://{account_name}.dfs.core.windows.net"
-        return DataLakeServiceClient(self.account_url, credential=self.value)
-
-    def get_file_system_client(self, account_name, container_name):
-        return self.get_service_client(account_name).get_file_system_client(
-            container_name
-        )
-
-    def get_directory_client(self, account_name, container_name, directory_path="/"):
-        return self.get_service_client(account_name).get_directory_client(
-            container_name, directory=directory_path
-        )
-
-    def get_file_client(self, account_name, container_name, file_path):
-        return self.get_service_client(account_name).get_file_client(
-            container_name, file_path
-        )
-
-
-def upload_file(
-    account_name,
-    container_name,
-    remote_filepath,
-    local_filepath,
-    method, # =LoginMethod.AZCLI
-    overwrite=False,
-):
-    """
-    Upload a file to the DSAT Multistorage solution
-    Parameters:
-    account_name (str): Name of the Multistorage account
-    container_name (str): Name of the container inside the multistorage that we should upload to
-    remote_filepath (str): Destination filepath after the upload completes
-    local_filepath (str): Path to the file on the local filesystem that should be uploaded
-    method (LoginMethod): How to Authenticate to the Multistorage solution
-    overwrite (bool): Should we overwrite the file in the multistorage container if it already exists?
-    """
-    client = method.get_file_client(account_name, container_name, remote_filepath)
-
-    if not client.exists():
-        print("Destination File doesnt exist yet, creating...")
-        client.create_file()
-        overwrite=True
-
-    try:
-        with open(local_filepath, "rb") as source_data:
-            client.upload_data(source_data, overwrite=overwrite)
-    except ResourceModifiedError:
-        raise FileExistsError(f"File {method.account_url+'/'+container_name+'/'+remote_filepath} already exists!\nSet the overwrite flag to True if you wish to overwrite the file.")
-
-
-def download_file(
-    account_name,
-    container_name,
-    remote_filepath,
-    local_filepath,
-    method, # =LoginMethod.AZCLI
-    overwrite=False,
-):
-    """
-    Download a file from the DSAT Multistorage solution
-    Parameters:
-    account_name (str): Name of the Multistorage account
-    container_name (str): Name of the container inside the multistorage that we should upload to
-    remote_filepath (str): Path to the file in the Multistorage container that should be downloaded
-    local_filepath (str): Path of the file on the local filesystem after the download completes.
-    method (LoginMethod): How to Authenticate to the Multistorage solution
-    overwrite (bool): Should we overwrite the file on the local filesystem if it already exists?
-    """
-    client = method.get_file_client(account_name, container_name, remote_filepath)
-    download_stub = client.download_file()
-
-    write_flags = "wb" if overwrite else "xb"
-
-    try:
-        with open(local_filepath, write_flags) as f:
-            f.write(download_stub.readall())
-    except FileExistsError:
-        raise FileExistsError(f"Local File {local_filepath} already exists!\nSet the overwrite flag to True if you wish to overwrite the file.")
-
-
-def download_csv_to_pandas(
-    account_name,
-    container_name,
-    remote_filepath,
-    method, # =LoginMethod.AZCLI
-):
-    """
-    Fetch a CSV file from the DSAT Multistorage solution and make it available as a Pandas Dataframe
-    Parameters:
-    account_name (str): Name of the Multistorage account
-    container_name (str): Name of the container inside the multistorage that we should upload to
-    remote_filepath (str): Path to the file in the Multistorage container that should be downloaded
-    method (LoginMethod): How to Authenticate to the Multistorage solution
-
-    Returns:
-    pd.DataFrame: Pandas Dataframe holding the CSV data downloaded from the multistorage container.
-    """
-    client = method.get_file_client(account_name, container_name, remote_filepath)
-    download_stub = client.download_file()
-    with BytesIO() as input_blob:
-        download_stub.readinto(input_blob)
-        pandas_df = pd.read_csv(input_blob, sep=",")
-    return pandas_df
-
-def download_excel_to_pandas(
-    account_name,
-    container_name,
-    remote_filepath,
-    method, # =LoginMethod.AZCLI
-):
-    """
-    Fetch a CSV file from the DSAT Multistorage solution and make it available as a Pandas Dataframe
-    Parameters:
-    account_name (str): Name of the Multistorage account
-    container_name (str): Name of the container inside the multistorage that we should upload to
-    remote_filepath (str): Path to the file in the Multistorage container that should be downloaded
-    method (LoginMethod): How to Authenticate to the Multistorage solution
-
-    Returns:
-    pd.DataFrame: Pandas Dataframe holding the CSV data downloaded from the multistorage container.
-    """
-    client = method.get_file_client(account_name, container_name, remote_filepath)
-    download_stub = client.download_file()
-    with BytesIO() as input_blob:
-        download_stub.readinto(input_blob)
-        pandas_df = pd.read_excel(input_blob, engine="openpyxl")
-    return pandas_df
-
-
-# EXAMPLES
-# # Configure your storage account settings and point to the local file you want to upload for this demo.
-local_file = "./example.csv"
-account_name = "stfsifadsprd01"
-container_name = "ctr-workbench"
-remote_filepath = "./secure/Sebastien/Nature 3.0/Nature_analysis/ARS_solva2/Corresp_tabl_relatienummer_LEI.xlsx"
-
-# # First upload example.csv to mydata.csv
-# upload_file(
-#     account_name=account_name,
-#     container_name=container_name,
-#     remote_filepath=remote_filepath,
-#     local_filepath=local_file,
-#     overwrite=True
-# )
-
-# # Then download the mydata.csv file back into clouddata.csv
-download_file(
-    account_name=account_name,
-    container_name=container_name,
-    remote_filepath=remote_filepath,
-    local_filepath="./clouddata.csv",
-    overwrite=True
-)
-
-# # Or directly fetch the mydata.csv file into a pandas dataframe
-df = download_excel_to_pandas(
-    account_name=account_name,
-    container_name=container_name,
-    remote_filepath=remote_filepath,
-)
-
-
-
-###############################################################################
-############# test to delete
-#############################
-
 
 import os
 from enum import Enum
@@ -522,7 +338,6 @@ import pandas as pd
 from azure.identity import DefaultAzureCredential, AzureCliCredential
 from azure.storage.filedatalake import DataLakeServiceClient
 from azure.core.exceptions import ResourceModifiedError, ResourceExistsError
-import dnb_data_access as dda
 
 # ----------------------------
 # Authentication / Credentials
@@ -557,6 +372,7 @@ class LoginMethod(Enum):
                 raise ValueError("Env var DATALAKE_STORAGE_ACCOUNT_KEY is not set.")
             return key
         raise ValueError(f"Unsupported LoginMethod: {self}")
+
 
 # ----------------------------
 # Client factories
@@ -724,38 +540,23 @@ def download_excel_to_pandas(
         # Default to .xlsx engine
         return pd.read_excel(input_blob, sheet_name=sheet_name, engine="openpyxl", **read_excel_kwargs)
 
-
 # ----------------------------
 # Examples
 # ----------------------------
 
 if __name__ == "__main__":
-    account_name = "stfsifadsprd01"
-    container_name = "ctr-workbench"
 
     # Example 1: Download an Excel file into pandas
-    remote_xlsx = "secure/Sebastien/Nature 3.0/Nature_analysis/ARS_solva2/Corresp_tabl_relatienummer_LEI.xlsx"
+    remote_xlsx = "./secure/Sebastien/Nature 3.0/Nature_analysis/ARS_solva2/Corresp_tabl_relatienummer_LEI.xlsx"
     df_xlsx = download_excel_to_pandas(
-        account_name=account_name,
-        container_name=container_name,
+        account_name=config.account_name,
+        container_name=config.container_name,
         remote_filepath=remote_xlsx,
         method=LoginMethod.AZCLI,  # or LoginMethod.DEFAULT / SAS / ACCOUNT_KEY
-        sheet_name=0
-    )
+        sheet_name=0  )
     print(df_xlsx.head())
 
-    # Example 2: Download a CSV into pandas
-    remote_csv = "secure/Sebastien/some_folder/mydata.csv"
-    df_csv = download_csv_to_pandas(
-        account_name=account_name,
-        container_name=container_name,
-        remote_filepath=remote_csv,
-        method=LoginMethod.AZCLI,
-        sep=","
-    )
-    print(df_csv.head())
-
-    # Example 3: Upload a local file and then download it to another path
+    # Example 2: Upload a local file and then download it to another path
     local_src = "./example.csv"
     remote_dest = "secure/Sebastien/some_folder/example.csv"
     upload_file(

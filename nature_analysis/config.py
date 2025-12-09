@@ -4,18 +4,27 @@ Configuration settings for SHS Nature Analysis
 from pathlib import Path
 
 # File paths
-BASE_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv/OS-2025')
+BASE_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv/OS-2025') # to be deleted
+DATA_PATH = BASE_PATH / 'git_repo/nature_paper_DNB/data' # to be deleted
+
+BASE_PATH = Path("./secure/Sebastien/Nature 3.0/Nature_analysis") # Azure storage
+GitRepo_data_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv/OS-2025') / 'git_repo/nature_paper_DNB/data'
 DATA_PATH = BASE_PATH / 'git_repo/nature_paper_DNB/data'
-DS_VULN_UPDATE_PATH = DATA_PATH / 'DS_Vuln_update'
+
+DS_VULN_UPDATE_PATH = GitRepo_data_PATH / 'DS_Vuln_update'
 VULN_config_PATH = DS_VULN_UPDATE_PATH / 'config_store'
 VULN_final_PATH = DS_VULN_UPDATE_PATH / 'Vuln_final_store'
 VULN_PATH = VULN_final_PATH  # Alias for backwards compatibility
-ANALYSIS_PATH = BASE_PATH / 'analysis/output_data'
+ANALYSIS_PATH = BASE_PATH / 'results'
 
 ####################################
 # Input files in secured environment
+account_name = "stfsifadsprd01"
+container_name = "ctr-workbench"
+
 # SHS instrument data
-SECURED_DRIVE_PATH = Path('G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/')
+SECURED_DRIVE_PATH = Path('G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/') # to be deleted
+SECURED_DRIVE_PATH = Path("./secure/Sebastien/Nature 3.0/Nature_analysis") # Azure storage
 SHS_INSTRUMENT_FILE = SECURED_DRIVE_PATH / 'SHS/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
 SHS_HOLDER_FILE = SECURED_DRIVE_PATH / 'SHS/F_511_31_32_hldr_instrmnt_2024-Q4_prepped.csv'
 # AnaCredit instrument data
