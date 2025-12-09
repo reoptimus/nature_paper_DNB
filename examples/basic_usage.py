@@ -97,10 +97,10 @@ def case_4_prudential_lossess_insurances_SCR_calculation():
     # SCR variation due to market valuation of assets -> based on pd variations
     # import ARS S2 data to re-evaluate SCR position after pd degradation
     data_loader.load_S2_ARS_data()
-
-    # import market losses per banks
+    # data transformation
     
-
+    # import market losses per insurance
+    
     # calculate SCR variation
 
 

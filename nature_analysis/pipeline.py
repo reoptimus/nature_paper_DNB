@@ -304,74 +304,74 @@ class AnaCreditAnalysisPipeline:
 
         return CET1_results
 
-    def calculate_financial_impacts(self, depreciation_df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Calculate financial impacts for AnaCredit instruments.
+    # def calculate_financial_impacts(self, depreciation_df: pd.DataFrame) -> pd.DataFrame:
+    #     """
+    #     Calculate financial impacts for AnaCredit instruments.
 
-        Args:
-            depreciation_df: DataFrame with depreciation columns
+    #     Args:
+    #         depreciation_df: DataFrame with depreciation columns
 
-        Returns:
-            DataFrame with financial impact calculations
-        """
-        logger.info("Calculating AnaCredit financial impacts...")
+    #     Returns:
+    #         DataFrame with financial impact calculations
+    #     """
+    #     logger.info("Calculating AnaCredit financial impacts...")
 
-        # Reshape depreciation data to long format
-        id_cols = ['PERIOD', 'IDENTIFIER', 'INSTR_CLASS', 'ISSUER_COUNTRY',
-                   'nace_lvl1', 'nace_lvl3']
+    #     # Reshape depreciation data to long format
+    #     id_cols = ['PERIOD', 'IDENTIFIER', 'INSTR_CLASS', 'ISSUER_COUNTRY',
+    #                'nace_lvl1', 'nace_lvl3']
 
-        dpr_long = depreciation_df.melt(
-            id_vars=id_cols,
-            var_name='Scenario',
-            value_name='Depreciation'
-        )
+    #     dpr_long = depreciation_df.melt(
+    #         id_vars=id_cols,
+    #         var_name='Scenario',
+    #         value_name='Depreciation'
+    #     )
 
-        # Clean scenario names
-        dpr_long['Scenario'] = dpr_long['Scenario'].str.replace('Depr_', '', regex=False)
-        dpr_long['Eco_serv'] = dpr_long['Scenario'].str.split('_').str[-1]
-        dpr_long['Scenario'] = dpr_long['Scenario'].str.rsplit('_', n=1).str[0]
+    #     # Clean scenario names
+    #     dpr_long['Scenario'] = dpr_long['Scenario'].str.replace('Depr_', '', regex=False)
+    #     dpr_long['Eco_serv'] = dpr_long['Scenario'].str.split('_').str[-1]
+    #     dpr_long['Scenario'] = dpr_long['Scenario'].str.rsplit('_', n=1).str[0]
 
-        # Clean maturity data
-        instrmnt_clean = data_loader.clean_instrument_maturity(self.instrmnt_df)
+    #     # Clean maturity data
+    #     instrmnt_clean = data_loader.clean_instrument_maturity(self.instrmnt_df)
 
-        # Get unique scenario/ES combinations
-        scenario_choices = dpr_long['Scenario'].unique()
-        es_choices = dpr_long['Eco_serv'].unique()
+    #     # Get unique scenario/ES combinations
+    #     scenario_choices = dpr_long['Scenario'].unique()
+    #     es_choices = dpr_long['Eco_serv'].unique()
 
-        # Calculate impacts for each scenario/ES
-        results_list = []
+    #     # Calculate impacts for each scenario/ES
+    #     results_list = []
 
-        for scenario, es in product(scenario_choices, es_choices):
-            logger.info(f"Processing AnaCredit scenario: {scenario}, ES: {es}")
+    #     for scenario, es in product(scenario_choices, es_choices):
+    #         logger.info(f"Processing AnaCredit scenario: {scenario}, ES: {es}")
 
-            # Prepare data for this scenario
-            instrmnt_loop = instrmnt_clean[[
-                'PERIOD', 'IDENTIFIER', 'INSTR_CLASS', 'ISSUER_COUNTRY',
-                'ISSUER_SECTOR', 'nace_lvl1', 'resid_mat_yr', 'pd', 'vol', 'debt_ratio'
-            ]].copy()
+    #         # Prepare data for this scenario
+    #         instrmnt_loop = instrmnt_clean[[
+    #             'PERIOD', 'IDENTIFIER', 'INSTR_CLASS', 'ISSUER_COUNTRY',
+    #             'ISSUER_SECTOR', 'nace_lvl1', 'resid_mat_yr', 'pd', 'vol', 'debt_ratio'
+    #         ]].copy()
 
-            instrmnt_loop['Scenario'] = scenario
-            instrmnt_loop['Eco_serv'] = es
+    #         instrmnt_loop['Scenario'] = scenario
+    #         instrmnt_loop['Eco_serv'] = es
 
-            # Merge with depreciation
-            dpr_subset = dpr_long[
-                (dpr_long['Scenario'] == scenario) &
-                (dpr_long['Eco_serv'] == es)
-            ][['PERIOD', 'IDENTIFIER', 'Depreciation']]
+    #         # Merge with depreciation
+    #         dpr_subset = dpr_long[
+    #             (dpr_long['Scenario'] == scenario) &
+    #             (dpr_long['Eco_serv'] == es)
+    #         ][['PERIOD', 'IDENTIFIER', 'Depreciation']]
 
-            instrmnt_loop = instrmnt_loop.merge(
-                dpr_subset, on=['PERIOD', 'IDENTIFIER'], how='left'
-            )
+    #         instrmnt_loop = instrmnt_loop.merge(
+    #             dpr_subset, on=['PERIOD', 'IDENTIFIER'], how='left'
+    #         )
 
-            # Calculate financial impacts
-            result = financial_models.calculate_instrument_impacts(instrmnt_loop)
+    #         # Calculate financial impacts
+    #         result = financial.calculate_instrument_impacts(instrmnt_loop)
 
-            results_list.append(result)
+    #         results_list.append(result)
 
-        # Combine all results
-        final_results = pd.concat(results_list, ignore_index=True)
+    #     # Combine all results
+    #     final_results = pd.concat(results_list, ignore_index=True)
 
-        return final_results
+    #     return final_results
 
 
 def main():

@@ -175,8 +175,112 @@ def load_COREP_data(file_path: str = config.COREP_FILE) -> pd.DataFrame:
     return COREP_data
 
 def load_S2_ARS_data(file_path: str = config.S2_ARS_FILE) -> pd.DataFrame:
-    """Load COREP data with proper dtype specification."""
-    S2_ARS_data = pd.read_csv(file_path)
+    # Read csv file with ARS extract
+    print("Reading ARS extract...")
+    ARS_extract = pd.read_csv(file_path) # ARS_extract = pd.read_csv(config.S2_ARS_FILE)
+
+    # Check unique periods
+    print("Unique periods:", ARS_extract['periode'].unique())
+
+    # List of fields to delete
+    list_deleted_fields = [
+        "rapportageset", "formulier_id", "inzendmoment", "laad_dts", "eind_dts",
+        "categorie", "verkorte_naam", "toezichtklasse", "activiteitstatus",
+        "hoofdcategorie", "subcategorie", "ziektekosten", "rechtsopvolger", "A"
+    ]
+
+    # Remove specified columns
+    ARS_extract = ARS_extract.drop(columns=list_deleted_fields, errors='ignore')
+
+    # Remove columns ending with 'C0020'
+    ARS_extract = ARS_extract.loc[:, ~ARS_extract.columns.str.endswith('C0020')]
+
+    # Remove columns starting with 'R1000'
+    ARS_extract = ARS_extract.loc[:, ~ARS_extract.columns.str.startswith('R1000')]
+
+    # Filter for specific period
+    ARS_extract = ARS_extract[ARS_extract['periode'] == '31/12/2024']
+
+    # Get unique concern names
+    print("Unique concern names:", ARS_extract['concern_naam'].unique())
+
+    # For each insurer, keep the report with highest 'volgnummer'
+    print("Filtering for highest volgnummer per insurer...")
+    list_report = (
+        ARS_extract[['relatienummer', 'relatienaam', 'rapportageID', 'volgnummer']]
+        .drop_duplicates()
+        .sort_values('volgnummer', ascending=False)
+        .groupby('relatienummer', as_index=False)
+        .first()
+        .sort_values('relatienummer')
+    )
+
+    # Filter for last volgnummer per reporting entity
+    ARS_extract = ARS_extract[ARS_extract['rapportageID'].isin(list_report['rapportageID'])]
+
+    # Convert "NA" string to empty string
+    ARS_extract = ARS_extract.replace("NA", "")
+
+    # Convert columns starting with "R0" to numeric
+    print("Converting R0 columns to numeric...")
+    r0_cols = [col for col in ARS_extract.columns if col.startswith('R0')]
+    for col in r0_cols:
+        ARS_extract[col] = pd.to_numeric(ARS_extract[col], errors='coerce')
+
+    # Pivot from wide to long format
+    print("Pivoting data to long format...")
+    id_cols = [col for col in ARS_extract.columns if not col.startswith('R0')]
+    a = pd.melt(
+        ARS_extract,
+        id_vars=id_cols,
+        value_vars=r0_cols,
+        var_name='BS_items_ID',
+        value_name='BS_item_value'
+    )
+
+    # Filter for top insurers from MSR
+    print("Filtering for top insurers from SHS...")
+    list_insurers_MSR = pd.read_csv('../Balance sheet/List_insurers_MSR_ARS.csv')
+    list_insurers_MSR = list_insurers_MSR[list_insurers_MSR['relatienummer1'] != '#N/A']
+    list_insurers_MSR = list_insurers_MSR.drop(columns=['relatienummer2'], errors='ignore')
+
+    QRS_short = a[a['relatienummer'].isin(list_insurers_MSR['relatienummer1'])]
+
+    # Verify list of insurers in MSR
+    print("Insurers in MSR:", QRS_short['relatienaam'].unique())
+
+    # Pivot back to wide format (insurers as columns)
+    print("Pivoting data to wide format...")
+    QRS_tab = (
+        QRS_short.pivot_table(
+            index='BS_items_ID',
+            columns='relatienaam',
+            values='BS_item_value',
+            aggfunc='first'  # Use 'first' to handle any duplicates
+        )
+        .reset_index()
+        .sort_values('BS_items_ID')
+    )
+
+    # Extract first 5 characters of BS_items_ID
+    QRS_tab['BS_items_ID'] = QRS_tab['BS_items_ID'].str[:5]
+
+    # Add label names to balance sheet items
+    print("Adding labels to balance sheet items...")
+    labels_ARS = pd.read_excel('../templates/s02_01_01.xlsx', sheet_name=0)
+
+    # Map BS_items_ID to labels using the first column ('NA.') and 'Assets' column
+    # The R code: labels_ARS$Assets[match(QRS_tab$BS_items_ID, labels_ARS$NA.)]
+    QRS_tab['items_labels'] = QRS_tab['BS_items_ID'].map(
+        labels_ARS.set_index('NA.')['Assets'].to_dict()
+    )
+
+    # Reorder columns to put items_labels and BS_items_ID first
+    cols = ['items_labels', 'BS_items_ID'] + [
+        col for col in QRS_tab.columns
+        if col not in ['items_labels', 'BS_items_ID']
+    ]
+    QRS_tab = QRS_tab[cols]
     return S2_ARS_data
 
 import pandas as pd
@@ -214,3 +318,460 @@ def aggregate_shs_losses(input_path, output_path):
     #     config.RESULTS_PATH / "SHS_Losses_all_scenario_ecosystem.xlsx",
     #     config.RESULTS_PATH / "SHS_Losses_aggregated_lvl1.xlsx")
     return agg_df
+
+
+"""
+##########################################
+#||                                    #||
+#|| Azure containers class & functions #||
+#||                                    #||
+##########################################
+"""
+import os
+from enum import Enum
+from io import BytesIO
+from pprint import pprint
+from azure.identity import DefaultAzureCredential, AzureCliCredential
+from azure.storage.filedatalake import DataLakeServiceClient
+from azure.core.exceptions import ResourceModifiedError
+
+
+class LoginMethod(Enum):
+    DEFAULT = DefaultAzureCredential()
+    AZCLI = AzureCliCredential()
+    SAS = os.environ.get("DATALAKE_STORAGE_SAS", None)
+    ACCOUNT_KEY = os.environ.get("DATALAKE_STORAGE_ACCOUNT_KEY", None)
+
+    def get_service_client(self, account_name):
+        self.account_url = f"https://{account_name}.dfs.core.windows.net"
+        return DataLakeServiceClient(self.account_url, credential=self.value)
+
+    def get_file_system_client(self, account_name, container_name):
+        return self.get_service_client(account_name).get_file_system_client(
+            container_name
+        )
+
+    def get_directory_client(self, account_name, container_name, directory_path="/"):
+        return self.get_service_client(account_name).get_directory_client(
+            container_name, directory=directory_path
+        )
+
+    def get_file_client(self, account_name, container_name, file_path):
+        return self.get_service_client(account_name).get_file_client(
+            container_name, file_path
+        )
+
+
+def upload_file(
+    account_name,
+    container_name,
+    remote_filepath,
+    local_filepath,
+    method, # =LoginMethod.AZCLI
+    overwrite=False,
+):
+    """
+    Upload a file to the DSAT Multistorage solution
+    Parameters:
+    account_name (str): Name of the Multistorage account
+    container_name (str): Name of the container inside the multistorage that we should upload to
+    remote_filepath (str): Destination filepath after the upload completes
+    local_filepath (str): Path to the file on the local filesystem that should be uploaded
+    method (LoginMethod): How to Authenticate to the Multistorage solution
+    overwrite (bool): Should we overwrite the file in the multistorage container if it already exists?
+    """
+    client = method.get_file_client(account_name, container_name, remote_filepath)
+
+    if not client.exists():
+        print("Destination File doesnt exist yet, creating...")
+        client.create_file()
+        overwrite=True
+
+    try:
+        with open(local_filepath, "rb") as source_data:
+            client.upload_data(source_data, overwrite=overwrite)
+    except ResourceModifiedError:
+        raise FileExistsError(f"File {method.account_url+'/'+container_name+'/'+remote_filepath} already exists!\nSet the overwrite flag to True if you wish to overwrite the file.")
+
+
+def download_file(
+    account_name,
+    container_name,
+    remote_filepath,
+    local_filepath,
+    method, # =LoginMethod.AZCLI
+    overwrite=False,
+):
+    """
+    Download a file from the DSAT Multistorage solution
+    Parameters:
+    account_name (str): Name of the Multistorage account
+    container_name (str): Name of the container inside the multistorage that we should upload to
+    remote_filepath (str): Path to the file in the Multistorage container that should be downloaded
+    local_filepath (str): Path of the file on the local filesystem after the download completes.
+    method (LoginMethod): How to Authenticate to the Multistorage solution
+    overwrite (bool): Should we overwrite the file on the local filesystem if it already exists?
+    """
+    client = method.get_file_client(account_name, container_name, remote_filepath)
+    download_stub = client.download_file()
+
+    write_flags = "wb" if overwrite else "xb"
+
+    try:
+        with open(local_filepath, write_flags) as f:
+            f.write(download_stub.readall())
+    except FileExistsError:
+        raise FileExistsError(f"Local File {local_filepath} already exists!\nSet the overwrite flag to True if you wish to overwrite the file.")
+
+
+def download_csv_to_pandas(
+    account_name,
+    container_name,
+    remote_filepath,
+    method, # =LoginMethod.AZCLI
+):
+    """
+    Fetch a CSV file from the DSAT Multistorage solution and make it available as a Pandas Dataframe
+    Parameters:
+    account_name (str): Name of the Multistorage account
+    container_name (str): Name of the container inside the multistorage that we should upload to
+    remote_filepath (str): Path to the file in the Multistorage container that should be downloaded
+    method (LoginMethod): How to Authenticate to the Multistorage solution
+
+    Returns:
+    pd.DataFrame: Pandas Dataframe holding the CSV data downloaded from the multistorage container.
+    """
+    client = method.get_file_client(account_name, container_name, remote_filepath)
+    download_stub = client.download_file()
+    with BytesIO() as input_blob:
+        download_stub.readinto(input_blob)
+        pandas_df = pd.read_csv(input_blob, sep=",")
+    return pandas_df
+
+def download_excel_to_pandas(
+    account_name,
+    container_name,
+    remote_filepath,
+    method, # =LoginMethod.AZCLI
+):
+    """
+    Fetch a CSV file from the DSAT Multistorage solution and make it available as a Pandas Dataframe
+    Parameters:
+    account_name (str): Name of the Multistorage account
+    container_name (str): Name of the container inside the multistorage that we should upload to
+    remote_filepath (str): Path to the file in the Multistorage container that should be downloaded
+    method (LoginMethod): How to Authenticate to the Multistorage solution
+
+    Returns:
+    pd.DataFrame: Pandas Dataframe holding the CSV data downloaded from the multistorage container.
+    """
+    client = method.get_file_client(account_name, container_name, remote_filepath)
+    download_stub = client.download_file()
+    with BytesIO() as input_blob:
+        download_stub.readinto(input_blob)
+        pandas_df = pd.read_excel(input_blob, engine="openpyxl")
+    return pandas_df
+
+
+# EXAMPLES
+# # Configure your storage account settings and point to the local file you want to upload for this demo.
+local_file = "./example.csv"
+account_name = "stfsifadsprd01"
+container_name = "ctr-workbench"
+remote_filepath = "./secure/Sebastien/Nature 3.0/Nature_analysis/ARS_solva2/Corresp_tabl_relatienummer_LEI.xlsx"
+
+# # First upload example.csv to mydata.csv
+# upload_file(
+#     account_name=account_name,
+#     container_name=container_name,
+#     remote_filepath=remote_filepath,
+#     local_filepath=local_file,
+#     overwrite=True
+# )
+
+# # Then download the mydata.csv file back into clouddata.csv
+download_file(
+    account_name=account_name,
+    container_name=container_name,
+    remote_filepath=remote_filepath,
+    local_filepath="./clouddata.csv",
+    overwrite=True
+)
+
+# # Or directly fetch the mydata.csv file into a pandas dataframe
+df = download_excel_to_pandas(
+    account_name=account_name,
+    container_name=container_name,
+    remote_filepath=remote_filepath,
+)
+
+
+
+###############################################################################
+############# test to delete
+#############################
+
+
+import os
+from enum import Enum
+from io import BytesIO
+from pathlib import Path
+from typing import Optional
+
+import pandas as pd
+from azure.identity import DefaultAzureCredential, AzureCliCredential
+from azure.storage.filedatalake import DataLakeServiceClient
+from azure.core.exceptions import ResourceModifiedError, ResourceExistsError
+import dnb_data_access as dda
+
+# ----------------------------
+# Authentication / Credentials
+# ----------------------------
+
+class LoginMethod(Enum):
+    DEFAULT = "default"        # Managed identity / env vars chain (DefaultAzureCredential)
+    AZCLI = "azcli"            # AzureCliCredential
+    SAS = "sas"                # DATALAKE_STORAGE_SAS env var
+    ACCOUNT_KEY = "account_key"  # DATALAKE_STORAGE_ACCOUNT_KEY env var
+
+    def get_credential(self):
+        """
+        Return a credential suitable for DataLakeServiceClient.
+        For SAS and account key we return the raw string (SDK supports both).
+        """
+        if self is LoginMethod.DEFAULT:
+            return DefaultAzureCredential()
+        if self is LoginMethod.AZCLI:
+            return AzureCliCredential()
+        if self is LoginMethod.SAS:
+            sas = os.environ.get("DATALAKE_STORAGE_SAS")
+            if not sas:
+                raise ValueError("Env var DATALAKE_STORAGE_SAS is not set.")
+            # Normalize to start with '?' for safety
+            if not sas.startswith("?"):
+                sas = "?" + sas
+            return sas
+        if self is LoginMethod.ACCOUNT_KEY:
+            key = os.environ.get("DATALAKE_STORAGE_ACCOUNT_KEY")
+            if not key:
+                raise ValueError("Env var DATALAKE_STORAGE_ACCOUNT_KEY is not set.")
+            return key
+        raise ValueError(f"Unsupported LoginMethod: {self}")
+
+# ----------------------------
+# Client factories
+# ----------------------------
+
+def get_service_client(account_name: str, method: LoginMethod) -> DataLakeServiceClient:
+    """
+    Build a DataLakeServiceClient for the given account name and login method.
+    """
+    account_url = f"https://{account_name}.dfs.core.windows.net"
+    credential = method.get_credential()
+    return DataLakeServiceClient(account_url=account_url, credential=credential)
+
+def get_file_system_client(account_name: str, container_name: str, method: LoginMethod):
+    """
+    Get a FileSystemClient (container) from the DataLakeServiceClient.
+    """
+    svc = get_service_client(account_name, method)
+    return svc.get_file_system_client(file_system=container_name)
+
+def get_directory_client(account_name: str, container_name: str, directory_path: str, method: LoginMethod):
+    """
+    Get a DirectoryClient via FileSystemClient -> DirectoryClient.
+    """
+    fs = get_file_system_client(account_name, container_name, method)
+    return fs.get_directory_client(directory=directory_path)
+
+def get_file_client(account_name: str, container_name: str, file_path: str, method: LoginMethod):
+    """
+    Get a FileClient via FileSystemClient -> FileClient.
+    """
+    fs = get_file_system_client(account_name, container_name, method)
+    return fs.get_file_client(file_path)
+
+# ----------------------------
+# File operations
+# ----------------------------
+
+def upload_file(
+    account_name: str,
+    container_name: str,
+    remote_filepath: str,
+    local_filepath: str,
+    method: LoginMethod,  # e.g., LoginMethod.AZCLI
+    overwrite: bool = False,
+):
+    """
+    Upload a file to Azure Data Lake Storage Gen2.
+
+    Parameters:
+        account_name (str): Storage account name.
+        container_name (str): File system (container) name.
+        remote_filepath (str): Destination path in the container.
+        local_filepath (str): Local path to the file to upload.
+        method (LoginMethod): Authentication method.
+        overwrite (bool): Overwrite the destination file if it exists.
+
+    Raises:
+        FileExistsError: If file exists and overwrite=False.
+    """
+    file_client = get_file_client(account_name, container_name, remote_filepath, method)
+
+    created_now = False
+    if not file_client.exists():
+        print("Destination does not exist yet, creating...")
+        file_client.create_file()
+        created_now = True
+
+    try:
+        with open(local_filepath, "rb") as f:
+            # If we just created the file, allow overwrite to simplify upload behavior.
+            file_client.upload_data(f, overwrite=(overwrite or created_now))
+    except ResourceModifiedError:
+        # Happens if the file exists and overwrite=False
+        raise FileExistsError(
+            f"File '{container_name}/{remote_filepath}' already exists. "
+            f"Set overwrite=True to replace it."
+        )
+
+def download_file(
+    account_name: str,
+    container_name: str,
+    remote_filepath: str,
+    local_filepath: str,
+    method: LoginMethod,  # e.g., LoginMethod.AZCLI
+    overwrite: bool = False,
+):
+    """
+    Download a file from Azure Data Lake Storage Gen2 to a local path.
+
+    Raises:
+        FileExistsError: If local file exists and overwrite=False.
+    """
+    file_client = get_file_client(account_name, container_name, remote_filepath, method)
+    download = file_client.download_file()
+
+    mode = "wb" if overwrite else "xb"  # 'xb' fails if file exists
+    try:
+        with open(local_filepath, mode) as f:
+            f.write(download.readall())
+    except FileExistsError:
+        raise FileExistsError(
+            f"Local file '{local_filepath}' already exists. "
+            f"Set overwrite=True to replace it."
+        )
+
+# ----------------------------
+# Pandas helpers
+# ----------------------------
+
+def _download_to_bytesio(
+    account_name: str,
+    container_name: str,
+    remote_filepath: str,
+    method: LoginMethod,
+) -> BytesIO:
+    """
+    Download remote file into an in-memory BytesIO stream (rewound to position 0).
+    """
+    file_client = get_file_client(account_name, container_name, remote_filepath, method)
+    downloader = file_client.download_file()
+    buf = BytesIO()
+    downloader.readinto(buf)
+    buf.seek(0)
+    return buf
+
+def download_csv_to_pandas(
+    account_name: str,
+    container_name: str,
+    remote_filepath: str,
+    method: LoginMethod,  # e.g., LoginMethod.AZCLI
+    sep: str = ",",
+    encoding: str = "utf-8",
+    **read_csv_kwargs,
+) -> pd.DataFrame:
+    """
+    Download a CSV from ADLS Gen2 and parse it as a pandas DataFrame.
+    """
+    input_blob = _download_to_bytesio(account_name, container_name, remote_filepath, method)
+    # Important: ensure we read from start even if caller reuses the buffer.
+    input_blob.seek(0)
+    return pd.read_csv(input_blob, sep=sep, encoding=encoding, **read_csv_kwargs)
+
+def download_excel_to_pandas(
+    account_name: str,
+    container_name: str,
+    remote_filepath: str,
+    method: LoginMethod,  # e.g., LoginMethod.AZCLI
+    sheet_name=0,
+    **read_excel_kwargs,
+) -> pd.DataFrame:
+    """
+    Download an Excel file from ADLS Gen2 and parse it as a pandas DataFrame.
+
+    Uses 'openpyxl' for .xlsx and 'xlrd' for legacy .xls automatically (based on extension).
+    """
+    input_blob = _download_to_bytesio(account_name, container_name, remote_filepath, method)
+    input_blob.seek(0)
+
+    ext = Path(remote_filepath).suffix.lower()
+    if ext == ".xls":
+        # Requires xlrd installed (modern xlrd supports only .xls)
+        return pd.read_excel(input_blob, sheet_name=sheet_name, engine="xlrd", **read_excel_kwargs)
+    else:
+        # Default to .xlsx engine
+        return pd.read_excel(input_blob, sheet_name=sheet_name, engine="openpyxl", **read_excel_kwargs)
+
+
+# ----------------------------
+# Examples
+# ----------------------------
+
+if __name__ == "__main__":
+    account_name = "stfsifadsprd01"
+    container_name = "ctr-workbench"
+
+    # Example 1: Download an Excel file into pandas
+    remote_xlsx = "secure/Sebastien/Nature 3.0/Nature_analysis/ARS_solva2/Corresp_tabl_relatienummer_LEI.xlsx"
+    df_xlsx = download_excel_to_pandas(
+        account_name=account_name,
+        container_name=container_name,
+        remote_filepath=remote_xlsx,
+        method=LoginMethod.AZCLI,  # or LoginMethod.DEFAULT / SAS / ACCOUNT_KEY
+        sheet_name=0
+    )
+    print(df_xlsx.head())
+
+    # Example 2: Download a CSV into pandas
+    remote_csv = "secure/Sebastien/some_folder/mydata.csv"
+    df_csv = download_csv_to_pandas(
+        account_name=account_name,
+        container_name=container_name,
+        remote_filepath=remote_csv,
+        method=LoginMethod.AZCLI,
+        sep=","
+    )
+    print(df_csv.head())
+
+    # Example 3: Upload a local file and then download it to another path
+    local_src = "./example.csv"
+    remote_dest = "secure/Sebastien/some_folder/example.csv"
+    upload_file(
+        account_name=account_name,
+        container_name=container_name,
+        remote_filepath=remote_dest,
+        local_filepath=local_src,
+        method=LoginMethod.AZCLI,
+        overwrite=True,
+    )
+
+    download_file(
+        account_name=account_name,
+        container_name=container_name,
+        remote_filepath=remote_dest,
+        local_filepath="./clouddata.csv",
+        method=LoginMethod.AZCLI,
+        overwrite=True,
+    )
