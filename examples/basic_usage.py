@@ -24,6 +24,7 @@ from nature_analysis import (
 importlib.reload(pipeline)
 importlib.reload(vulnerability)
 importlib.reload(data_loader)
+importlib.reload(config)
 
 def case_0_Vulnerability_DS_generator()
     import importlib
@@ -92,16 +93,20 @@ def case_3_prudential_lossess_banks_CET1_calculation():
     # Calculate depreciation for this specific case
     Anacred_delta_PD_df = pipeline_anacredit.calculate_delta_CET1()
 
-
 def case_4_prudential_lossess_insurances_SCR_calculation():  
     # SCR variation due to market valuation of assets -> based on pd variations
-    # import ARS S2 data to re-evaluate SCR position after pd degradation
-    data_loader.load_S2_ARS_data()
-    # data transformation
+    # import ARS S2 data BS and SCR to re-evaluate SCR position after pd degradation
+    S2_ARS_data_BS = data_loader.load_S2_ARS_data_BS()
+    S2_ARS_data_BS['BS_categories_names'][0:20]
+    S2_ARS_data_SCR = data_loader.load_S2_ARS_data_SCR()
+    # categories of interest
+    ['Equities', 'Equities - listed','Equities - unlisted','Bonds','Government Bonds','Corporate Bonds', 'Loans and mortgages to individuals', 'Total assets'] # assets
     
     # import market losses per insurance
+    SHS_data = data_loader.download_excel_to_pandas( remote_filepath = config.RESULTS_PATH / "SHS_Losses_all_scenario_ecosystem.xlsx")
     
     # calculate SCR variation
+
 
 
 if __name__ == "__main__":

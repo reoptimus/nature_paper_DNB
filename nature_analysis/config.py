@@ -33,6 +33,9 @@ ANACREDIT_INSTRUMENT_FILE = SECURED_DRIVE_PATH / 'anacredit_NL/anacredit_df_2024
 COREP_FILE = SECURED_DRIVE_PATH / 'COREP/corep_extract_date_2024_12_31.csv'
 # ARS Solvency 2
 S2_ARS_FILE = SECURED_DRIVE_PATH / 'ARS_solva2/S2ARS_S02_01_31122024.csv'
+S2_ARS_FILE_SCR = SECURED_DRIVE_PATH / 'ARS_solva2/S2ARS_S25_01_31122024.csv'
+Corresp_RelatieNum_LEI = SECURED_DRIVE_PATH / 'ARS_solva2/Corresp_tabl_relatienummer_LEI.xlsx'
+S2_01_01_template = SECURED_DRIVE_PATH / 'ARS_solva2/s02_01_01_template.xlsx'
 # results (also in secured env.)
 RESULTS_PATH = SECURED_DRIVE_PATH / 'results'
 ###################################

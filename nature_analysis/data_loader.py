@@ -174,10 +174,10 @@ def load_COREP_data(file_path: str = config.COREP_FILE) -> pd.DataFrame:
     COREP_data = pd.read_csv(file_path)
     return COREP_data
 
-def load_S2_ARS_data(file_path: str = config.S2_ARS_FILE) -> pd.DataFrame:
+def load_S2_ARS_data_BS(file_path: str = config.S2_ARS_FILE) -> pd.DataFrame:
     # Read csv file with ARS extract
     print("Reading ARS extract...")
-    ARS_extract = pd.read_csv(file_path) # ARS_extract = pd.read_csv(config.S2_ARS_FILE)
+    ARS_extract = download_csv_to_pandas( remote_filepath = file_path ) # ARS_extract = download_csv_to_pandas(  config.S2_ARS_FILE  )
 
     # Check unique periods
     print("Unique periods:", ARS_extract['periode'].unique())
@@ -238,52 +238,119 @@ def load_S2_ARS_data(file_path: str = config.S2_ARS_FILE) -> pd.DataFrame:
         value_name='BS_item_value'
     )
 
-    # Filter for top insurers from MSR
+    # Filter for top insurers from the correspondance table between internal_number (ARS) and LEI/RIAD to join SHS
     print("Filtering for top insurers from SHS...")
-    list_insurers_MSR = pd.read_csv('../Balance sheet/List_insurers_MSR_ARS.csv')
-    list_insurers_MSR = list_insurers_MSR[list_insurers_MSR['relatienummer1'] != '#N/A']
-    list_insurers_MSR = list_insurers_MSR.drop(columns=['relatienummer2'], errors='ignore')
-
-    QRS_short = a[a['relatienummer'].isin(list_insurers_MSR['relatienummer1'])]
-
-    # Verify list of insurers in MSR
-    print("Insurers in MSR:", QRS_short['relatienaam'].unique())
+    list_insurers_LEI = download_excel_to_pandas( remote_filepath = config.Corresp_RelatieNum_LEI ) 
+    list_insurers_LEI = list_insurers_LEI[list_insurers_LEI['relatienummer1'] != '#N/A']
+    QRS_short = (
+        a.merge(
+            list_insurers_LEI[['relatienummer1', 'LEI', 'RIAD']],
+            left_on='relatienummer',
+            right_on='relatienummer1',
+            how='inner'
+        )
+        .drop(columns='relatienummer1')
+    )
 
     # Pivot back to wide format (insurers as columns)
     print("Pivoting data to wide format...")
-    QRS_tab = (
-        QRS_short.pivot_table(
+    QRS_tab = QRS_short.pivot_table(
             index='BS_items_ID',
-            columns='relatienaam',
+            columns='LEI',
             values='BS_item_value',
             aggfunc='first'  # Use 'first' to handle any duplicates
-        )
-        .reset_index()
-        .sort_values('BS_items_ID')
-    )
+        ).reset_index().sort_values('BS_items_ID')
 
     # Extract first 5 characters of BS_items_ID
     QRS_tab['BS_items_ID'] = QRS_tab['BS_items_ID'].str[:5]
 
     # Add label names to balance sheet items
     print("Adding labels to balance sheet items...")
-    labels_ARS = pd.read_excel('../templates/s02_01_01.xlsx', sheet_name=0)
+    labels_ARS =  download_excel_to_pandas( remote_filepath = config.S2_01_01_template )
+    labels_ARS.columns = ['BS_categories_names','BS_items_ID']
 
-    # Map BS_items_ID to labels using the first column ('NA.') and 'Assets' column
-    # The R code: labels_ARS$Assets[match(QRS_tab$BS_items_ID, labels_ARS$NA.)]
-    QRS_tab['items_labels'] = QRS_tab['BS_items_ID'].map(
-        labels_ARS.set_index('NA.')['Assets'].to_dict()
-    )
+    # Merge BS_items_ID to labels
+    QRS_tab = QRS_tab.merge(labels_ARS , on = 'BS_items_ID' , how = 'left')
+
 
     # Reorder columns to put items_labels and BS_items_ID first
-    cols = ['items_labels', 'BS_items_ID'] + [
+    cols = ['BS_categories_names', 'BS_items_ID'] + [
         col for col in QRS_tab.columns
-        if col not in ['items_labels', 'BS_items_ID']
+        if col not in ['BS_categories_names', 'BS_items_ID']
     ]
     QRS_tab = QRS_tab[cols]
-    return S2_ARS_data
+    return QRS_tab
 
-import pandas as pd
+def load_S2_ARS_data_SCR(file_path: str = config.S2_ARS_FILE_SCR ) -> pd.DataFrame:
+    # Read csv file with ARS extract
+    print("Reading ARS extract...")
+    ARS_extract = download_csv_to_pandas( remote_filepath = file_path ) #  ARS_extract =download_csv_to_pandas(  config.S2_ARS_FILE_SCR  )
+
+    # Filter for specific period
+    ARS_extract = ARS_extract[ARS_extract['periode'] == '31-12-2024']
+    # Check unique periods
+    print("Unique periods:", ARS_extract['periode'].unique())
+
+    # For each insurer, keep the report with highest 'volgnummer'
+    print("Filtering for highest volgnummer per insurer...")
+    list_report = (
+        ARS_extract[['relatienummer', 'relatienaam', 'rapportageID', 'volgnummer']]
+        .drop_duplicates()
+        .sort_values('volgnummer', ascending=False)
+        .groupby('relatienummer', as_index=False)
+        .first()
+        .sort_values('relatienummer')
+    )
+
+    # Filter for last volgnummer per reporting entity
+    ARS_extract = ARS_extract[ARS_extract['rapportageID'].isin(list_report['rapportageID'])]
+
+    # SCR net info is C0030 code
+    # Define the data for rows code and names
+    scr_table = pd.DataFrame({
+        "SCR Category": [
+            "Market risk",
+            "Counterparty default risk",
+            "Life underwriting risk",
+            "Health underwriting risk",
+            "Non-life underwriting risk",
+            "Diversification",
+            "Intangible asset risk",
+            "Basic Solvency Capital Requirement"
+        ],
+        "Code": [
+            "R0010",
+            "R0020",
+            "R0030",
+            "R0040",
+            "R0050",
+            "R0060",
+            "R0070",
+            "R0100"
+        ]
+    })
+ 
+    # filter ARS_extract
+    keep_list = ['relatienummer', 'R0010C0030', 'R0100C0030']
+    ARS_extract = ARS_extract[keep_list]
+
+    # Filter for top insurers from the correspondance table between internal_number (ARS) and LEI/RIAD to join SHS
+    print("Filtering for top insurers from SHS...")
+    list_insurers_LEI = download_excel_to_pandas( remote_filepath = config.Corresp_RelatieNum_LEI ) 
+    list_insurers_LEI = list_insurers_LEI[list_insurers_LEI['relatienummer1'] != '#N/A']
+    ARS_short = (
+        ARS_extract.merge(
+            list_insurers_LEI[['relatienummer1', 'LEI', 'RIAD']],
+            left_on='relatienummer',
+            right_on='relatienummer1',
+            how='inner'
+        )
+        .drop(columns='relatienummer1')
+    )
+
+    # rename columns names
+    ARS_short = ARS_short.rename(columns={ 'R0010C0030' : 'Market risk SCR' , 'R0100C0030' : 'basic SCR' })
+    return ARS_short
 
 def aggregate_shs_losses(input_path, output_path):
     """
@@ -484,10 +551,10 @@ def download_file(
 # ----------------------------
 
 def _download_to_bytesio(
-    account_name: str,
-    container_name: str,
     remote_filepath: str,
-    method: LoginMethod,
+    account_name: str = config.account_name,
+    container_name: str = config.container_name,
+    method: LoginMethod = LoginMethod.AZCLI ,  # e.g., LoginMethod.AZCLI
 ) -> BytesIO:
     """
     Download remote file into an in-memory BytesIO stream (rewound to position 0).
@@ -500,10 +567,10 @@ def _download_to_bytesio(
     return buf
 
 def download_csv_to_pandas(
-    account_name: str,
-    container_name: str,
     remote_filepath: str,
-    method: LoginMethod,  # e.g., LoginMethod.AZCLI
+    account_name: str = config.account_name,
+    container_name: str = config.container_name,
+    method: LoginMethod = LoginMethod.AZCLI ,  # e.g., LoginMethod.AZCLI
     sep: str = ",",
     encoding: str = "utf-8",
     **read_csv_kwargs,
@@ -511,16 +578,16 @@ def download_csv_to_pandas(
     """
     Download a CSV from ADLS Gen2 and parse it as a pandas DataFrame.
     """
-    input_blob = _download_to_bytesio(account_name, container_name, remote_filepath, method)
+    input_blob = _download_to_bytesio (remote_filepath , account_name, container_name, method)
     # Important: ensure we read from start even if caller reuses the buffer.
     input_blob.seek(0)
     return pd.read_csv(input_blob, sep=sep, encoding=encoding, **read_csv_kwargs)
 
 def download_excel_to_pandas(
-    account_name: str,
-    container_name: str,
     remote_filepath: str,
-    method: LoginMethod,  # e.g., LoginMethod.AZCLI
+    account_name: str = config.account_name,
+    container_name: str = config.container_name,
+    method: LoginMethod = LoginMethod.AZCLI ,  # e.g., LoginMethod.AZCLI
     sheet_name=0,
     **read_excel_kwargs,
 ) -> pd.DataFrame:
@@ -529,7 +596,7 @@ def download_excel_to_pandas(
 
     Uses 'openpyxl' for .xlsx and 'xlrd' for legacy .xls automatically (based on extension).
     """
-    input_blob = _download_to_bytesio(account_name, container_name, remote_filepath, method)
+    input_blob = _download_to_bytesio( remote_filepath, account_name, container_name, method)
     input_blob.seek(0)
 
     ext = Path(remote_filepath).suffix.lower()
@@ -549,9 +616,9 @@ if __name__ == "__main__":
     # Example 1: Download an Excel file into pandas
     remote_xlsx = "./secure/Sebastien/Nature 3.0/Nature_analysis/ARS_solva2/Corresp_tabl_relatienummer_LEI.xlsx"
     df_xlsx = download_excel_to_pandas(
+        remote_filepath=remote_xlsx,
         account_name=config.account_name,
         container_name=config.container_name,
-        remote_filepath=remote_xlsx,
         method=LoginMethod.AZCLI,  # or LoginMethod.DEFAULT / SAS / ACCOUNT_KEY
         sheet_name=0  )
     print(df_xlsx.head())
@@ -576,3 +643,4 @@ if __name__ == "__main__":
         method=LoginMethod.AZCLI,
         overwrite=True,
     )
+
