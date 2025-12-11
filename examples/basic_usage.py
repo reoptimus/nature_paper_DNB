@@ -7,6 +7,11 @@ NOTE: To use this package, ensure you have the required dependencies:
 
 The package is now organized as 'nature_analysis'.
 """
+
+##################################
+## initialisation
+################################
+# in powershell type : az config set core.encrypt_token_cache=false
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -106,7 +111,6 @@ def case_4_prudential_lossess_insurances_SCR_calculation():
     SHS_data = data_loader.download_excel_to_pandas( remote_filepath = config.RESULTS_PATH / "SHS_Losses_all_scenario_ecosystem.xlsx")
     
     # calculate SCR variation
-
 
 
 if __name__ == "__main__":

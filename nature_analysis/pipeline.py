@@ -15,17 +15,6 @@ from . import vulnerability
 from . import financial
 from . import visualization
 
-from nature_analysis import (
-    pipeline,
-    vulnerability,
-    config,
-    data_loader,
-     financial
-)
-importlib.reload(pipeline)
-importlib.reload(vulnerability)
-importlib.reload(data_loader)
-
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,

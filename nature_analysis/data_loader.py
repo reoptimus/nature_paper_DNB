@@ -398,81 +398,42 @@ def aggregate_shs_losses(input_path, output_path):
 import os
 from enum import Enum
 from io import BytesIO
-from pathlib import Path
-from typing import Optional
+from pprint import pprint
 
 import pandas as pd
 from azure.identity import DefaultAzureCredential, AzureCliCredential
 from azure.storage.filedatalake import DataLakeServiceClient
-from azure.core.exceptions import ResourceModifiedError, ResourceExistsError
+from azure.core.exceptions import ResourceModifiedError
 
 # ----------------------------
 # Authentication / Credentials
 # ----------------------------
 
 class LoginMethod(Enum):
-    DEFAULT = "default"        # Managed identity / env vars chain (DefaultAzureCredential)
-    AZCLI = "azcli"            # AzureCliCredential
-    SAS = "sas"                # DATALAKE_STORAGE_SAS env var
-    ACCOUNT_KEY = "account_key"  # DATALAKE_STORAGE_ACCOUNT_KEY env var
+    AZCLI = AzureCliCredential()
+    SAS = os.environ.get("DATALAKE_STORAGE_SAS", None)
+    ACCOUNT_KEY = os.environ.get("DATALAKE_STORAGE_ACCOUNT_KEY", None)
+    account_name = config.account_name
+    container_name = config.container_name
 
-    def get_credential(self):
-        """
-        Return a credential suitable for DataLakeServiceClient.
-        For SAS and account key we return the raw string (SDK supports both).
-        """
-        if self is LoginMethod.DEFAULT:
-            return DefaultAzureCredential()
-        if self is LoginMethod.AZCLI:
-            return AzureCliCredential()
-        if self is LoginMethod.SAS:
-            sas = os.environ.get("DATALAKE_STORAGE_SAS")
-            if not sas:
-                raise ValueError("Env var DATALAKE_STORAGE_SAS is not set.")
-            # Normalize to start with '?' for safety
-            if not sas.startswith("?"):
-                sas = "?" + sas
-            return sas
-        if self is LoginMethod.ACCOUNT_KEY:
-            key = os.environ.get("DATALAKE_STORAGE_ACCOUNT_KEY")
-            if not key:
-                raise ValueError("Env var DATALAKE_STORAGE_ACCOUNT_KEY is not set.")
-            return key
-        raise ValueError(f"Unsupported LoginMethod: {self}")
+    def get_service_client(self, account_name):
+        self.account_url = f"https://{account_name}.dfs.core.windows.net"
+        return DataLakeServiceClient(self.account_url, credential=self.value)
 
+    def get_file_system_client(self, account_name, container_name):
+        return self.get_service_client(account_name).get_file_system_client(
+            container_name
+        )
 
-# ----------------------------
-# Client factories
-# ----------------------------
+    def get_directory_client(self, account_name, container_name, directory_path="/"):
+        return self.get_service_client(account_name).get_directory_client(
+            container_name, directory=directory_path
+        )
 
-def get_service_client(account_name: str, method: LoginMethod) -> DataLakeServiceClient:
-    """
-    Build a DataLakeServiceClient for the given account name and login method.
-    """
-    account_url = f"https://{account_name}.dfs.core.windows.net"
-    credential = method.get_credential()
-    return DataLakeServiceClient(account_url=account_url, credential=credential)
-
-def get_file_system_client(account_name: str, container_name: str, method: LoginMethod):
-    """
-    Get a FileSystemClient (container) from the DataLakeServiceClient.
-    """
-    svc = get_service_client(account_name, method)
-    return svc.get_file_system_client(file_system=container_name)
-
-def get_directory_client(account_name: str, container_name: str, directory_path: str, method: LoginMethod):
-    """
-    Get a DirectoryClient via FileSystemClient -> DirectoryClient.
-    """
-    fs = get_file_system_client(account_name, container_name, method)
-    return fs.get_directory_client(directory=directory_path)
-
-def get_file_client(account_name: str, container_name: str, file_path: str, method: LoginMethod):
-    """
-    Get a FileClient via FileSystemClient -> FileClient.
-    """
-    fs = get_file_system_client(account_name, container_name, method)
-    return fs.get_file_client(file_path)
+    def get_file_client(self, account_name, container_name, file_path):
+        return self.get_service_client(account_name).get_file_client(
+            container_name, file_path
+        )
 
 # ----------------------------
 # File operations
@@ -487,64 +448,57 @@ def upload_file(
     overwrite: bool = False,
 ):
     """
-    Upload a file to Azure Data Lake Storage Gen2.
-
+    Upload a file to the DSAT Multistorage solution
     Parameters:
-        account_name (str): Storage account name.
-        container_name (str): File system (container) name.
-        remote_filepath (str): Destination path in the container.
-        local_filepath (str): Local path to the file to upload.
-        method (LoginMethod): Authentication method.
-        overwrite (bool): Overwrite the destination file if it exists.
-
-    Raises:
-        FileExistsError: If file exists and overwrite=False.
+    account_name (str): Name of the Multistorage account
+    container_name (str): Name of the container inside the multistorage that we should upload to
+    remote_filepath (str): Destination filepath after the upload completes
+    local_filepath (str): Path to the file on the local filesystem that should be uploaded
+    method (LoginMethod): How to Authenticate to the Multistorage solution
+    overwrite (bool): Should we overwrite the file in the multistorage container if it already exists?
     """
-    file_client = get_file_client(account_name, container_name, remote_filepath, method)
+    client = method.get_file_client(account_name, container_name, remote_filepath)
 
-    created_now = False
-    if not file_client.exists():
-        print("Destination does not exist yet, creating...")
-        file_client.create_file()
-        created_now = True
+    if not client.exists():
+        print("Destination File doesnt exist yet, creating...")
+        client.create_file()
+        overwrite=True
 
     try:
-        with open(local_filepath, "rb") as f:
-            # If we just created the file, allow overwrite to simplify upload behavior.
-            file_client.upload_data(f, overwrite=(overwrite or created_now))
+        with open(local_filepath, "rb") as source_data:
+            client.upload_data(source_data, overwrite=overwrite)
     except ResourceModifiedError:
-        # Happens if the file exists and overwrite=False
-        raise FileExistsError(
-            f"File '{container_name}/{remote_filepath}' already exists. "
-            f"Set overwrite=True to replace it."
-        )
+        raise FileExistsError(f"File {method.account_url+'/'+container_name+'/'+remote_filepath} already exists!\nSet the overwrite flag to True if you wish to overwrite the file.")
+
 
 def download_file(
     account_name: str,
     container_name: str,
     remote_filepath: str,
     local_filepath: str,
-    method: LoginMethod,  # e.g., LoginMethod.AZCLI
+    method=LoginMethod.AZCLI,  # e.g., LoginMethod.AZCLI
     overwrite: bool = False,
 ):
     """
-    Download a file from Azure Data Lake Storage Gen2 to a local path.
-
-    Raises:
-        FileExistsError: If local file exists and overwrite=False.
+    Download a file from the DSAT Multistorage solution
+    Parameters:
+    account_name (str): Name of the Multistorage account
+    container_name (str): Name of the container inside the multistorage that we should upload to
+    remote_filepath (str): Path to the file in the Multistorage container that should be downloaded
+    local_filepath (str): Path of the file on the local filesystem after the download completes.
+    method (LoginMethod): How to Authenticate to the Multistorage solution
+    overwrite (bool): Should we overwrite the file on the local filesystem if it already exists?
     """
-    file_client = get_file_client(account_name, container_name, remote_filepath, method)
-    download = file_client.download_file()
+    client = method.get_file_client(account_name, container_name, remote_filepath)
+    download_stub = client.download_file()
 
-    mode = "wb" if overwrite else "xb"  # 'xb' fails if file exists
+    write_flags = "wb" if overwrite else "xb"
+
     try:
-        with open(local_filepath, mode) as f:
-            f.write(download.readall())
+        with open(local_filepath, write_flags) as f:
+            f.write(download_stub.readall())
     except FileExistsError:
-        raise FileExistsError(
-            f"Local file '{local_filepath}' already exists. "
-            f"Set overwrite=True to replace it."
-        )
+        raise FileExistsError(f"Local File {local_filepath} already exists!\nSet the overwrite flag to True if you wish to overwrite the file.")
 
 # ----------------------------
 # Pandas helpers
@@ -559,38 +513,40 @@ def _download_to_bytesio(
     """
     Download remote file into an in-memory BytesIO stream (rewound to position 0).
     """
-    file_client = get_file_client(account_name, container_name, remote_filepath, method)
+    file_client = method.get_file_client(account_name, container_name, remote_filepath)
     downloader = file_client.download_file()
     buf = BytesIO()
     downloader.readinto(buf)
     buf.seek(0)
     return buf
 
-def download_csv_to_pandas(
+def download_csv_to_pandas( 
     remote_filepath: str,
-    account_name: str = config.account_name,
-    container_name: str = config.container_name,
-    method: LoginMethod = LoginMethod.AZCLI ,  # e.g., LoginMethod.AZCLI
-    sep: str = ",",
-    encoding: str = "utf-8",
-    **read_csv_kwargs,
-) -> pd.DataFrame:
+    account_name: str,
+    container_name: str,
+    method=LoginMethod.AZCLI,
+):
     """
-    Download a CSV from ADLS Gen2 and parse it as a pandas DataFrame.
+    Fetch a CSV file from the DSAT Multistorage solution and make it available as a Pandas Dataframe
+    Parameters:
+    account_name (str): Name of the Multistorage account
+    container_name (str): Name of the container inside the multistorage that we should upload to
+    remote_filepath (str): Path to the file in the Multistorage container that should be downloaded
+    method (LoginMethod): How to Authenticate to the Multistorage solution
+
+    Returns:
+    pd.DataFrame: Pandas Dataframe holding the CSV data downloaded from the multistorage container.
     """
-    input_blob = _download_to_bytesio (remote_filepath , account_name, container_name, method)
-    # Important: ensure we read from start even if caller reuses the buffer.
+    input_blob = _download_to_bytesio( remote_filepath, account_name, container_name, method)
     input_blob.seek(0)
-    return pd.read_csv(input_blob, sep=sep, encoding=encoding, **read_csv_kwargs)
+    return pd.read_csv(input_blob, sep=",")
 
 def download_excel_to_pandas(
     remote_filepath: str,
     account_name: str = config.account_name,
     container_name: str = config.container_name,
     method: LoginMethod = LoginMethod.AZCLI ,  # e.g., LoginMethod.AZCLI
-    sheet_name=0,
-    **read_excel_kwargs,
-) -> pd.DataFrame:
+    sheet_name=0) -> pd.DataFrame:
     """
     Download an Excel file from ADLS Gen2 and parse it as a pandas DataFrame.
 
@@ -599,13 +555,15 @@ def download_excel_to_pandas(
     input_blob = _download_to_bytesio( remote_filepath, account_name, container_name, method)
     input_blob.seek(0)
 
+    # download_stub.readinto(input_blob)
     ext = Path(remote_filepath).suffix.lower()
     if ext == ".xls":
         # Requires xlrd installed (modern xlrd supports only .xls)
-        return pd.read_excel(input_blob, sheet_name=sheet_name, engine="xlrd", **read_excel_kwargs)
+        pandas_df = pd.read_excel(input_blob, sheet_name=sheet_name, engine="xlrd")
     else:
         # Default to .xlsx engine
-        return pd.read_excel(input_blob, sheet_name=sheet_name, engine="openpyxl", **read_excel_kwargs)
+        pandas_df = pd.read_excel(input_blob, sheet_name=sheet_name, engine="openpyxl")
+    return pandas_df
 
 # ----------------------------
 # Examples
@@ -614,33 +572,12 @@ def download_excel_to_pandas(
 if __name__ == "__main__":
 
     # Example 1: Download an Excel file into pandas
-    remote_xlsx = "./secure/Sebastien/Nature 3.0/Nature_analysis/ARS_solva2/Corresp_tabl_relatienummer_LEI.xlsx"
+    remote_xlsx = "secure/Sebastien/Nature 3.0/Nature_analysis/ARS_solva2/Corresp_tabl_relatienummer_LEI.xlsx"
     df_xlsx = download_excel_to_pandas(
         remote_filepath=remote_xlsx,
         account_name=config.account_name,
         container_name=config.container_name,
-        method=LoginMethod.AZCLI,  # or LoginMethod.DEFAULT / SAS / ACCOUNT_KEY
+        method= LoginMethod.AZCLI,  # or LoginMethod.DEFAULT / SAS / ACCOUNT_KEY
         sheet_name=0  )
     print(df_xlsx.head())
-
-    # Example 2: Upload a local file and then download it to another path
-    local_src = "./example.csv"
-    remote_dest = "secure/Sebastien/some_folder/example.csv"
-    upload_file(
-        account_name=account_name,
-        container_name=container_name,
-        remote_filepath=remote_dest,
-        local_filepath=local_src,
-        method=LoginMethod.AZCLI,
-        overwrite=True,
-    )
-
-    download_file(
-        account_name=account_name,
-        container_name=container_name,
-        remote_filepath=remote_dest,
-        local_filepath="./clouddata.csv",
-        method=LoginMethod.AZCLI,
-        overwrite=True,
-    )
 
