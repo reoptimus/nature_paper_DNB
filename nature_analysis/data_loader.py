@@ -7,15 +7,19 @@ from pathlib import Path
 from typing import Tuple, List
 from . import config
 
-
 def load_SHS_data(file_path: str = config.SHS_INSTRUMENT_FILE) -> pd.DataFrame:
     """Load SHS instrument data with proper dtype specification."""
-    SHS_instrmnt = pd.read_csv(file_path, dtype={'nace': 'str'})
+    SHS_instrmnt = download_csv_to_pandas( remote_filepath =file_path )
     return SHS_instrmnt
+
+def load_SHS_GEC_data(file_path: str = config.GEC_lvl1) -> pd.DataFrame:
+    """Load SHS instrument data with proper dtype specification."""
+    SHS_GEC_instrmnt = download_csv_to_pandas( remote_filepath =file_path )
+    return SHS_GEC_instrmnt
 
 def load_Anacredit_data(file_path: str = config.ANACREDIT_INSTRUMENT_FILE) -> pd.DataFrame:
     """Load SHS instrument data with proper dtype specification."""
-    anacredit_instrmnt = pd.read_csv(file_path, dtype={'nace': 'str'})
+    anacredit_instrmnt = download_csv_to_pandas( remote_filepath =file_path )
     # anacredit_instrmnt = pd.read_csv(config.ANACREDIT_INSTRUMENT_FILE)
     # add INSTR_CLASS , vol and debt_ratio to be coherent with SHS data frame
     # INSTR_CLASS
@@ -52,7 +56,6 @@ def load_vulnerability_data(file_path: Path = None) -> pd.DataFrame:
     )
     
     return df_long
-
 
 def load_alpha_data(file_path: Path = None, 
                     area_map_path: Path = config.AREA_MAP_FILE) -> pd.DataFrame:
@@ -108,7 +111,7 @@ def load_nace_mapping(file_path: Path = None,
 
 def load_shs_holder_data(file_path: str = config.SHS_HOLDER_FILE) -> pd.DataFrame:
     """Load SHS holder-instrument relationship data."""
-    return pd.read_csv(file_path)
+    return download_csv_to_pandas(file_path)
 
 def extract_scenario_info(df: pd.DataFrame) -> Tuple[List[str], List[str], List[str]]:
     """Extract unique scenarios, eco services, and aggregation types from data."""
@@ -120,7 +123,6 @@ def extract_scenario_info(df: pd.DataFrame) -> Tuple[List[str], List[str], List[
     eco_services = df['eco_serv'].unique().tolist()
     
     return scenarios, eco_services
-
 
 def prepare_vulnerability_with_alpha(vuln_df_: pd.DataFrame, 
                                      alpha_df_: pd.DataFrame) -> pd.DataFrame:
@@ -150,7 +152,6 @@ def prepare_vulnerability_with_alpha(vuln_df_: pd.DataFrame,
     
     return merged
 
-
 def clean_instrument_maturity(df: pd.DataFrame, 
                               max_maturity: int = config.MAX_MATURITY) -> pd.DataFrame:
     """Clean and impute residual maturity data."""
@@ -171,7 +172,7 @@ def clean_instrument_maturity(df: pd.DataFrame,
 
 def load_COREP_data(file_path: str = config.COREP_FILE) -> pd.DataFrame:
     """Load COREP data with proper dtype specification."""
-    COREP_data = pd.read_csv(file_path)
+    COREP_data = download_csv_to_pandas(file_path)
     return COREP_data
 
 def load_S2_ARS_data_BS(file_path: str = config.S2_ARS_FILE) -> pd.DataFrame:
@@ -352,6 +353,78 @@ def load_S2_ARS_data_SCR(file_path: str = config.S2_ARS_FILE_SCR ) -> pd.DataFra
     ARS_short = ARS_short.rename(columns={ 'R0010C0030' : 'Market risk SCR' , 'R0100C0030' : 'basic SCR' })
     return ARS_short
 
+def load_S2_ARS_data_dA(file_path: str = config.S2_ARS_FILE_dA ) -> pd.DataFrame:
+    # Read csv file with ARS extract
+    print("Reading ARS extract...")
+    ARS_extract_s26 = download_csv_to_pandas( remote_filepath = file_path ) #  ARS_extract_s26 = download_csv_to_pandas(  config.S2_ARS_FILE_dA  )
+
+    # Filter for specific period
+    ARS_extract_s26 = ARS_extract_s26[ARS_extract_s26['periode'] == '31-12-2024']
+    # Check unique periods
+    print("Unique periods:", ARS_extract_s26['periode'].unique())
+
+    # For each insurer, keep the report with highest 'volgnummer'
+    print("Filtering for highest volgnummer per insurer...")
+    list_report = (
+        ARS_extract_s26[['relatienummer', 'relatienaam', 'rapportageID', 'volgnummer']]
+        .drop_duplicates()
+        .sort_values('volgnummer', ascending=False)
+        .groupby('relatienummer', as_index=False)
+        .first()
+        .sort_values('relatienummer')
+    )
+
+    # Filter for last volgnummer per reporting entity
+    ARS_extract_s26 = ARS_extract_s26[ARS_extract_s26['rapportageID'].isin(list_report['rapportageID'])]
+
+    # filter ARS_extract
+    keep_list = [
+        "relatienummer",
+        "R0210C0040", "R0210C0020",
+        "R0250C0040", "R0250C0020",
+        "R0410C0040", "R0410C0020",
+    ]
+
+    ARS_extract_s26 = ARS_extract_s26[keep_list].copy()
+
+    # Compute deltas
+    ARS_extract_s26["dA_type1"] = ARS_extract_s26["R0210C0040"] - ARS_extract_s26["R0210C0020"]
+    ARS_extract_s26["dA_type2"] = ARS_extract_s26["R0250C0040"] - ARS_extract_s26["R0250C0020"]
+    ARS_extract_s26["dA_bonds"] = ARS_extract_s26["R0410C0040"] - ARS_extract_s26["R0410C0020"]
+
+    # Ensure numeric and replace #N/A with NaN, then fill with 0
+    for col in ["dA_type1", "dA_type2", "dA_bonds"]:
+        ARS_extract_s26[col] = pd.to_numeric(ARS_extract_s26[col], errors="coerce").fillna(0)
+    # Total delta
+    ARS_extract_s26["dA_s2"] =  ARS_extract_s26["dA_type1"] + ARS_extract_s26["dA_type2"] + ARS_extract_s26["dA_bonds"]
+
+    # Drop the raw input columns now that deltas are computed
+    ARS_extract_s26 = ARS_extract_s26.drop(columns=[
+        "R0210C0040", "R0210C0020",
+        "R0250C0040", "R0250C0020",
+        "R0410C0040", "R0410C0020",
+    ])
+
+    # Filter for top insurers from the correspondance table between internal_number (ARS) and LEI/RIAD to join SHS
+    print("Filtering for top insurers from SHS...")
+    list_insurers_LEI = download_excel_to_pandas( remote_filepath = config.Corresp_RelatieNum_LEI ) 
+    list_insurers_LEI = list_insurers_LEI[list_insurers_LEI['relatienummer1'] != '#N/A']
+    ARS_short = (
+        ARS_extract_s26.merge(
+            list_insurers_LEI[['relatienummer1', 'LEI', 'RIAD']],
+            left_on='relatienummer',
+            right_on='relatienummer1',
+            how='inner'
+        )
+        .drop(columns='relatienummer1')
+    )
+
+    return ARS_short
+
+
+
+### !!!!
+# must be modified with read and write to Azure 'results' repertory
 def aggregate_shs_losses(input_path, output_path):
     """
     Aggregates SHS losses for ease of analysis and data presentation.
@@ -385,6 +458,8 @@ def aggregate_shs_losses(input_path, output_path):
     #     config.RESULTS_PATH / "SHS_Losses_all_scenario_ecosystem.xlsx",
     #     config.RESULTS_PATH / "SHS_Losses_aggregated_lvl1.xlsx")
     return agg_df
+#######
+
 
 
 """
@@ -439,7 +514,6 @@ class LoginMethod(Enum):
                 raise ValueError("Env var DATALAKE_STORAGE_ACCOUNT_KEY is not set.")
             return key
         raise ValueError(f"Unsupported LoginMethod: {self}")
-
 
 # ----------------------------
 # Client factories

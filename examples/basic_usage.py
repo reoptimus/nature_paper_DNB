@@ -11,7 +11,12 @@ The package is now organized as 'nature_analysis'.
 ##################################
 ## initialisation
 ################################
-# in powershell type : az config set core.encrypt_token_cache=false
+# connection issu to azure solved by running following lines in PowerShell...
+# az config set core.encrypt_token_cache=false  # 1) Temporarily disable file-cache encryption to allow clearing
+# az account clear  # 2) Clear account state (this uses the cache)
+# az config set core.enable_broker_on_windows=false  # 3) Optionally disable the broker to force browser/device-code login
+# az login --use-device-code  # 4) Re-login (use device-code if the browser flow is stubborn)
+
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -101,16 +106,20 @@ def case_3_prudential_lossess_banks_CET1_calculation():
 def case_4_prudential_lossess_insurances_SCR_calculation():  
     # SCR variation due to market valuation of assets -> based on pd variations
     # import ARS S2 data BS and SCR to re-evaluate SCR position after pd degradation
-    S2_ARS_data_BS = data_loader.load_S2_ARS_data_BS()
-    S2_ARS_data_BS['BS_categories_names'][0:20]
-    S2_ARS_data_SCR = data_loader.load_S2_ARS_data_SCR()
-    # categories of interest
-    ['Equities', 'Equities - listed','Equities - unlisted','Bonds','Government Bonds','Corporate Bonds', 'Loans and mortgages to individuals', 'Total assets'] # assets
-    
+    # S2_ARS_data_BS = data_loader.load_S2_ARS_data_BS()
+    S2_ARS_data_SCR_s2 = data_loader.load_S2_ARS_data_SCR()
+    S2_ARS_data_dA_market_s2 = data_loader.load_S2_ARS_data_dA()
+    S2_ARS_data_clean = S2_ARS_data_SCR_s2.merge(S2_ARS_data_dA_market_s2 , on = ['relatienummer', 'LEI' ,'RIAD'], how = 'inner')
+    S2_ARS_data_clean['delta_SCR_cof'] = (-1) * S2_ARS_data_clean['Market risk SCR'] / ( S2_ARS_data_clean['basic SCR'] * S2_ARS_data_clean['dA_s2'] ) 
+    S2_ARS_data_clean['LEI','delta_SCR_cof']
+   
     # import market losses per insurance
-    SHS_data = data_loader.download_excel_to_pandas( remote_filepath = config.RESULTS_PATH / "SHS_Losses_all_scenario_ecosystem.xlsx")
+    SHS_GEC_data = data_loader.load_SHS_GEC_data()
+    SHS_GEC_data.columns
+    # calcul of losses based on nace, ESA_2010_INSTRUMENT_CLASS, ...
     
     # calculate SCR variation
+    
 
 
 if __name__ == "__main__":

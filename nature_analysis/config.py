@@ -7,7 +7,7 @@ from pathlib import Path
 BASE_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv/OS-2025') # to be deleted
 DATA_PATH = BASE_PATH / 'git_repo/nature_paper_DNB/data' # to be deleted
 
-BASE_PATH = Path("./secure/Sebastien/Nature 3.0/Nature_analysis") # Azure storage
+BASE_PATH = Path("./secure/Sebastien/Nature 3.0/Nature_analysis")
 GitRepo_data_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv/OS-2025') / 'git_repo/nature_paper_DNB/data'
 DATA_PATH = BASE_PATH / 'git_repo/nature_paper_DNB/data'
 
@@ -18,15 +18,17 @@ VULN_PATH = VULN_final_PATH  # Alias for backwards compatibility
 ANALYSIS_PATH = BASE_PATH / 'results'
 
 ####################################
-# Input files in secured environment
+# Input files in AZURE STORAGE secured environment
 account_name = "stfsifadsprd01"
 container_name = "ctr-workbench"
-
 # SHS instrument data
-SECURED_DRIVE_PATH = Path('G:/FS/IFA/Sebastien/Nature 3.0/Nature_analysis/') # to be deleted
-SECURED_DRIVE_PATH = Path("./secure/Sebastien/Nature 3.0/Nature_analysis") # Azure storage
+SECURED_DRIVE_PATH = Path("./secure/Sebastien/Nature 3.0/Nature_analysis") # Azure storage path
 SHS_INSTRUMENT_FILE = SECURED_DRIVE_PATH / 'SHS/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
 SHS_HOLDER_FILE = SECURED_DRIVE_PATH / 'SHS/F_511_31_32_hldr_instrmnt_2024-Q4_prepped.csv'
+# GEC instrument data (national reporting for SHS)
+GEC_INSTRUMENT_FILE = SECURED_DRIVE_PATH / 'SHS/F_511_31_32_instrmnt_nature_2024-Q4_prepped.csv'
+GEC_HOLDER_FILE = SECURED_DRIVE_PATH / 'SHS/F_511_31_32_hldr_instrmnt_2024-Q4_prepped.csv'
+GEC_lvl1 = SECURED_DRIVE_PATH / 'SHS/gec_2024-Q4_results.csv' # temporary , to delete
 # AnaCredit instrument data
 ANACREDIT_INSTRUMENT_FILE = SECURED_DRIVE_PATH / 'anacredit_NL/anacredit_df_2024-12-31.csv'
 # COREP
@@ -34,6 +36,7 @@ COREP_FILE = SECURED_DRIVE_PATH / 'COREP/corep_extract_date_2024_12_31.csv'
 # ARS Solvency 2
 S2_ARS_FILE = SECURED_DRIVE_PATH / 'ARS_solva2/S2ARS_S02_01_31122024.csv'
 S2_ARS_FILE_SCR = SECURED_DRIVE_PATH / 'ARS_solva2/S2ARS_S25_01_31122024.csv'
+S2_ARS_FILE_dA = SECURED_DRIVE_PATH / 'ARS_solva2/S2ARS_S26_01.csv'
 Corresp_RelatieNum_LEI = SECURED_DRIVE_PATH / 'ARS_solva2/Corresp_tabl_relatienummer_LEI.xlsx'
 S2_01_01_template = SECURED_DRIVE_PATH / 'ARS_solva2/s02_01_01_template.xlsx'
 # results (also in secured env.)
