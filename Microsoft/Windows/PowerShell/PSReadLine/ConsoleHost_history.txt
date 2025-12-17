@@ -1,1 +1,2 @@
 python.exe
+PYTHON.EXE

@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import Tuple, List
-from . import config
+from . import config 
 
 def load_SHS_data(file_path: str = config.SHS_INSTRUMENT_FILE) -> pd.DataFrame:
     """Load SHS instrument data with proper dtype specification."""

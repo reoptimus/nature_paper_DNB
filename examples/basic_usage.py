@@ -9,7 +9,7 @@ The package is now organized as 'nature_analysis'.
 """
 
 ##################################
-## initialisation
+## initialisation C:/Users/NC5452/Documents/Scripts/activat
 ################################
 # connection issu to azure solved by running following lines in PowerShell...
 # az config set core.encrypt_token_cache=false  # 1) Temporarily disable file-cache encryption to allow clearing
@@ -36,7 +36,7 @@ importlib.reload(vulnerability)
 importlib.reload(data_loader)
 importlib.reload(config)
 
-def case_0_Vulnerability_DS_generator()
+def case_0_Vulnerability_DS_generator():
     import importlib
     import nature_analysis
     shapes = nature_analysis.regenerate_vulnerability_files()
