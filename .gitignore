@@ -43,6 +43,10 @@ Thumbs.db
 Microsoft/
 debug.log
 
+# Local mirror of the Azure secure-drive prefix (created if a locally-run
+# pipeline saves plots/results under config.ANALYSIS_PATH/RESULTS_PATH)
+/secure/
+
 # Project specific
 !*.csv
 !*.xlsx

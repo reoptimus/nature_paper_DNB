@@ -228,10 +228,11 @@ class SHSAnalysisPipeline:
         impacts and portfolio losses aggregated by holder.
 
         Args:
-            create_plots: reserved for future visualization support. Currently
-                a no-op: visualization.py expects different column names
-                ('Scenario', 'Eco_serv') than this method's output
-                ('scenario', 'eco_service'), so plotting is not wired in yet.
+            create_plots: if True, save a portfolio-loss heatmap (by holder
+                sector x issuer sector) for the first scenario/ecosystem
+                service in the results, via
+                visualization.create_visualizations(). Figures are written to
+                config.ANALYSIS_PATH; failures are logged, not raised.
             demo: if True, use the synthetic demo dataset instead of
                 confidential SHS data - no DNB Azure access required.
 
@@ -240,7 +241,18 @@ class SHSAnalysisPipeline:
             issuer sector/country, ecosystem service and scenario.
         """
         self.load_all_data(demo=demo)
-        return self.calculate_financial_impacts()
+        results = self.calculate_financial_impacts()
+
+        if create_plots and len(results) > 0:
+            visualization.create_visualizations(
+                results,
+                results['eco_service'].iloc[0],
+                results['scenario'].iloc[0],
+                dimension_x='HOLDER_SECTOR',
+                dimension_y='nace_lvl1',
+            )
+
+        return results
 
     def run_quick_test(self, n_instruments: int = 100, demo: bool = False) -> pd.DataFrame:
         """
