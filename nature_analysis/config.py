@@ -17,6 +17,14 @@ VULN_config_PATH = DS_VULN_UPDATE_PATH / 'config_store'
 VULN_final_PATH = DS_VULN_UPDATE_PATH / 'Vuln_final_store'
 VULN_PATH = VULN_final_PATH  # Alias for backwards compatibility
 
+# Synthetic demo data (data_loader.load_demo_shs_data() etc.) - fictitious
+# instruments/holders, safe to share, used by nature_analysis.run_demo() so
+# the SHS pipeline can be exercised end to end with no DNB access at all.
+# Regenerate with: python examples/generate_demo_data.py
+DEMO_DATA_PATH = DATA_PATH / 'demo'
+DEMO_SHS_INSTRUMENT_FILE = DEMO_DATA_PATH / 'demo_shs_instruments.csv'
+DEMO_SHS_HOLDER_FILE = DEMO_DATA_PATH / 'demo_shs_holders.csv'
+
 # =============================================================================
 # CONFIDENTIAL DNB SOURCE DATA (Azure Data Lake, DNB-internal only)
 # =============================================================================

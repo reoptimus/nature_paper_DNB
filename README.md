@@ -123,13 +123,53 @@ if you only need the local/reference-data functionality.
 
 ## 🚀 Quick Start
 
-### Example 0: Quick Test (Fast & Lightweight) ⚡
+### Example 0a: Demo Mode (No DNB Access Needed) 🎓
+
+**The easiest way to see the whole pipeline work, right after cloning the
+repo - no Azure, no credentials, no confidential data.**
+
+```python
+import nature_analysis
+
+# Runs the full SHS pipeline (depreciation -> Merton model -> portfolio
+# losses by holder) on a small synthetic instrument/holder dataset, using
+# the real, non-confidential vulnerability data shipped in the repo.
+results = nature_analysis.run_demo()
+
+print(f"Total (fictitious) loss: €{results['VALUE_LOSS'].sum():,.0f}")
+print(f"Average loss % by sector:")
+print(results.groupby('nace_lvl1')['loss_perc'].mean().sort_values())
+```
+
+**Output** (actual run - agriculture (`A`) shows the largest average loss
+%, as expected for a package quantifying nature dependency):
+```
+nace_lvl1
+A   -0.172655
+J   -0.115866
+P   -0.110535
+M   -0.103173
+B   -0.086179
+K   -0.050764
+C   -0.049520
+H   -0.049479
+G   -0.037018
+Name: loss_perc, dtype: float64
+```
+
+The instruments/holders are entirely fictitious (see
+`examples/generate_demo_data.py` - regenerate with
+`python examples/generate_demo_data.py`), but they are matched to real
+country and NACE sector codes so the results reflect genuine
+ecosystem-vulnerability patterns. Pass `n_instruments=` for an even faster
+run, e.g. `nature_analysis.run_demo(n_instruments=30)`.
+
+### Example 0b: Quick Test on Real Data (Fast & Lightweight) ⚡
 
 **Perfect for testing, demos, or first-time users - inside the DNB
-environment.** `run_quick_test()` still loads real SHS instrument data
-through Azure, so it requires DNB Azure access; see
-[What can run without DNB access](#what-can-run-without-dnb-access) for a
-path that needs no confidential data at all.
+environment.** `run_quick_test()` loads real SHS instrument data through
+Azure, so it requires DNB Azure access; use Example 0a above if you don't
+have that.
 
 ```python
 import nature_analysis
@@ -252,9 +292,10 @@ nature_paper_DNB/
 │
 ├── examples/                   # Usage examples
 │   ├── __init__.py
-│   ├── basic_usage.py                 # SHS + AnaCredit + prudential workflows
+│   ├── generate_demo_data.py           # Regenerates data/demo/ (synthetic, no DNB access needed)
+│   ├── basic_usage.py                  # SHS + AnaCredit + prudential workflows
 │   ├── using_stored_vulnerabilities.py # Standard workflow walkthrough
-│   └── vulnerability_generation.py    # Regeneration workflow walkthrough
+│   └── vulnerability_generation.py     # Regeneration workflow walkthrough
 │
 ├── data/                       # Reference data
 │   ├── NACE_mapping.csv       # NACE to EXIOBASE mapping
@@ -888,10 +929,10 @@ pipeline = SHSAnalysisPipeline()
 ```
 
 **Methods:**
-- `load_all_data()` - Load SHS instruments, vulnerability, alpha, NACE mapping, holder data
+- `load_all_data(demo=False)` - Load SHS instruments, vulnerability, alpha, NACE mapping, holder data. `demo=True` loads the synthetic dataset (`data/demo/`) instead of confidential SHS data - no Azure access needed.
 - `calculate_financial_impacts()` - Calculate depreciation, PD/LGD/price changes, and aggregate portfolio losses by holder (one call - no separate depreciation/aggregation steps)
-- `run_full_pipeline(create_plots=False)` - `load_all_data()` + `calculate_financial_impacts()`
-- `run_quick_test(n_instruments=100)` - ⚡ Same, but limited to `n_instruments` instruments, the first scenario, and the first ecosystem service
+- `run_full_pipeline(create_plots=False, demo=False)` - `load_all_data(demo=...)` + `calculate_financial_impacts()`
+- `run_quick_test(n_instruments=100, demo=False)` - ⚡ Same, but limited to `n_instruments` instruments, the first scenario, and the first ecosystem service
 
 **Output:** Portfolio losses aggregated by holder, sector, geography, ecosystem service, scenario
 
@@ -926,16 +967,20 @@ pipeline = AnaCreditAnalysisPipeline()
 ```python
 import nature_analysis
 
-# SHS analysis
+# No DNB access needed
+demo_results = nature_analysis.run_demo()
+
+# SHS analysis (requires DNB Azure access)
 shs_results = nature_analysis.run_pipeline(create_plots=True)
 shs_quick = nature_analysis.run_quick_test(n_instruments=100)
 
-# AnaCredit analysis
+# AnaCredit analysis (requires DNB Azure access)
 anacredit_results = nature_analysis.run_anacredit_pipeline()
 anacredit_quick = nature_analysis.run_anacredit_quick_test(n_instruments=100)
 ```
 
 **Functions:**
+- `run_demo(n_instruments=None)` - 🎓 Run the full SHS pipeline on the synthetic demo dataset - no DNB access needed
 - `run_pipeline(create_plots=True)` - Run full SHS analysis pipeline
 - `run_quick_test(n_instruments=100)` - ⚡ Run SHS quick test
 - `run_anacredit_pipeline()` - Run full AnaCredit analysis pipeline
@@ -1006,9 +1051,11 @@ work right after `pip install -e .` on any machine:
 # 1. Import + public API surface check
 python tests/test_import.py
 
-# 2. Unit tests for the Merton/financial formulas and vulnerability helpers
-#    (plus an optional before/after CSV diff tool that just reports "skipped"
-#    when no comparison files are present)
+# 2. Unit tests for the Merton/financial formulas and vulnerability helpers,
+#    plus an end-to-end run of the SHS pipeline on the synthetic demo
+#    dataset (see Example 0a) - the one integration test that can run
+#    anywhere. Also includes an optional before/after CSV diff tool that
+#    just reports "skipped" when no comparison files are present.
 python tests/test_suite.py
 
 # 3. pytest suite for the vulnerability-generation module (uses mocked data)

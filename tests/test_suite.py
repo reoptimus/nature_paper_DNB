@@ -214,7 +214,31 @@ def test_vulnerability_calculation():
     logger.info("✓ Weighted metric calculation works")
 
 
-def compare_csv_outputs(original_path: str, new_path: str, 
+def test_demo_pipeline():
+    """
+    End-to-end regression test: run the full SHS pipeline on the synthetic
+    demo dataset (data/demo/, see examples/generate_demo_data.py) and check
+    the output is well-formed. Unlike the real SHS/AnaCredit data, this
+    requires no DNB Azure access, so it is the one integration test that can
+    actually run anywhere.
+    """
+    import nature_analysis
+
+    logger.info("\nTesting the full SHS pipeline on the demo dataset...")
+    results = nature_analysis.run_demo(n_instruments=30)
+
+    assert len(results) > 0, "Demo pipeline returned no rows"
+    expected_cols = {'HOLDER_SECTOR', 'HOLDER_AREA', 'scenario', 'eco_service',
+                      'VALUE_LOSS', 'OBS_VALUE', 'loss_perc'}
+    missing = expected_cols - set(results.columns)
+    assert not missing, f"Demo pipeline output missing columns: {missing}"
+    assert results['OBS_VALUE'].sum() > 0, "Demo pipeline produced zero portfolio value"
+    assert results['VALUE_LOSS'].notna().any(), "Demo pipeline produced no non-null losses"
+    logger.info(f"✓ Demo pipeline works end to end ({len(results)} rows, "
+                f"{results['OBS_VALUE'].sum():,.0f} EUR total value)")
+
+
+def compare_csv_outputs(original_path: str, new_path: str,
                        validator: OutputValidator, name: str,
                        key_cols: list = None):
     """Helper to compare CSV files."""
@@ -272,7 +296,10 @@ def main():
     # Unit tests
     test_financial_functions()
     test_vulnerability_calculation()
-    
+
+    # Demo pipeline (end-to-end, no DNB access required)
+    test_demo_pipeline()
+
     # Integration tests (if files available)
     try:
         validator = run_integration_tests()

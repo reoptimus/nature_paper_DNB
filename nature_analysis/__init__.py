@@ -106,6 +106,40 @@ def run_quick_test(n_instruments=100):
     return pipeline.run_quick_test(n_instruments=n_instruments)
 
 
+def run_demo(n_instruments=None):
+    """
+    Run the SHS pipeline end to end on a synthetic demo dataset - no DNB
+    Azure access and no confidential data required.
+
+    The instruments and holders are entirely fictitious (see
+    examples/generate_demo_data.py), but the ecosystem-vulnerability data
+    driving the results is the real, non-confidential data shipped in
+    data/DS_Vuln_update/Vuln_final_store/. This is the easiest way to see
+    the whole pipeline (depreciation -> Merton model -> portfolio losses by
+    holder) working, e.g. for a first-time user or someone outside DNB.
+
+    Args:
+        n_instruments (int, optional): if given, only use the first
+            n_instruments demo instruments and the first scenario/ecosystem
+            service (faster). If None (default), run on all ~300 demo
+            instruments and all configured scenarios/ecosystem services.
+
+    Returns:
+        pd.DataFrame: Portfolio losses by holder sector/geography,
+        instrument type, ecosystem service and scenario (same shape as
+        run_pipeline()).
+
+    Example:
+        >>> import nature_analysis
+        >>> results = nature_analysis.run_demo()
+        >>> print(f"Total (fictitious) loss: €{results['VALUE_LOSS'].sum():,.0f}")
+    """
+    pipeline = AnalysisPipeline()
+    if n_instruments is None:
+        return pipeline.run_full_pipeline(demo=True)
+    return pipeline.run_quick_test(n_instruments=n_instruments, demo=True)
+
+
 def run_anacredit_pipeline(create_plots=False, **kwargs):
     """
     Run the complete AnaCredit nature-based financial risk analysis pipeline.
@@ -175,6 +209,7 @@ __all__ = [
     'AnaCreditAnalysisPipeline',
     'run_pipeline',
     'run_quick_test',
+    'run_demo',
     'run_anacredit_pipeline',
     'run_anacredit_quick_test',
     'regenerate_vulnerability_files',

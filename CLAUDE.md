@@ -1053,6 +1053,11 @@ Ask the user for clarification when:
 ## Useful Commands
 
 ```bash
+# --- No DNB access needed at all ---
+
+# Full SHS pipeline on the synthetic demo dataset (data/demo/)
+python -c "import nature_analysis; nature_analysis.run_demo()"
+
 # --- Require DNB Azure access (real SHS/AnaCredit/COREP data) ---
 
 # Quick test (fast - use this first, from inside the DNB environment!)

@@ -72,12 +72,28 @@ class SHSAnalysisPipeline:
         self.nace_map = None
         self.scenarios = None
         self.eco_services = None
-        
-    def load_all_data(self):
-        """Load all required data files."""
-        logger.info("Loading instrument data...")
-        self.instrmnt_df = data_loader.load_SHS_data()
-        
+        self.demo = False
+
+    def load_all_data(self, demo: bool = False):
+        """
+        Load all required data files.
+
+        Args:
+            demo: if True, load the synthetic demo instrument/holder dataset
+                (data/demo/, see examples/generate_demo_data.py) instead of
+                the confidential SHS data on Azure. Useful to try the full
+                pipeline without DNB access. Vulnerability/alpha/NACE data is
+                always the real, non-confidential data shipped in data/.
+        """
+        self.demo = demo
+
+        if demo:
+            logger.info("Loading synthetic demo instrument data (no Azure access needed)...")
+            self.instrmnt_df = data_loader.load_demo_shs_data()
+        else:
+            logger.info("Loading instrument data...")
+            self.instrmnt_df = data_loader.load_SHS_data()
+
         logger.info("Loading vulnerability data...")
         self.vuln_df = data_loader.load_vulnerability_data()
         
@@ -145,7 +161,10 @@ class SHSAnalysisPipeline:
         # instrmnt_clean = data_loader.clean_instrument_maturity(pipeline_SHS.instrmnt_df)
         
         # Load holder-instrument data
-        shs_holder_df = data_loader.load_shs_holder_data()
+        if self.demo:
+            shs_holder_df = data_loader.load_demo_shs_holder_data()
+        else:
+            shs_holder_df = data_loader.load_shs_holder_data()
 
         # Calculate impacts for each holder/scenario/ES
         shs_results = []
@@ -203,7 +222,7 @@ class SHSAnalysisPipeline:
         results_merged = results_merged.drop(columns=['nace_2d_code'])
         return results_merged
 
-    def run_full_pipeline(self, create_plots: bool = False) -> pd.DataFrame:
+    def run_full_pipeline(self, create_plots: bool = False, demo: bool = False) -> pd.DataFrame:
         """
         Run the complete SHS workflow: load all data, then calculate financial
         impacts and portfolio losses aggregated by holder.
@@ -213,15 +232,17 @@ class SHSAnalysisPipeline:
                 a no-op: visualization.py expects different column names
                 ('Scenario', 'Eco_serv') than this method's output
                 ('scenario', 'eco_service'), so plotting is not wired in yet.
+            demo: if True, use the synthetic demo dataset instead of
+                confidential SHS data - no DNB Azure access required.
 
         Returns:
             Portfolio losses by holder sector/geography, instrument type,
             issuer sector/country, ecosystem service and scenario.
         """
-        self.load_all_data()
+        self.load_all_data(demo=demo)
         return self.calculate_financial_impacts()
 
-    def run_quick_test(self, n_instruments: int = 100) -> pd.DataFrame:
+    def run_quick_test(self, n_instruments: int = 100, demo: bool = False) -> pd.DataFrame:
         """
         Fast, lightweight run for demos/testing/first-time users: only the
         first `n_instruments` instruments, the first scenario, and the first
@@ -229,11 +250,13 @@ class SHSAnalysisPipeline:
 
         Args:
             n_instruments: number of instruments to keep (default: 100)
+            demo: if True, use the synthetic demo dataset instead of
+                confidential SHS data - no DNB Azure access required.
 
         Returns:
             Portfolio losses for the reduced instrument/scenario/ES subset.
         """
-        self.load_all_data()
+        self.load_all_data(demo=demo)
         self.instrmnt_df = self.instrmnt_df.head(n_instruments)
         self.scenarios = self.scenarios[:1]
         self.eco_services = self.eco_services[:1]

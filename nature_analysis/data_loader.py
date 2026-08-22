@@ -113,6 +113,22 @@ def load_shs_holder_data(file_path: str = config.SHS_HOLDER_FILE) -> pd.DataFram
     """Load SHS holder-instrument relationship data."""
     return download_csv_to_pandas(file_path)
 
+def load_demo_shs_data(file_path: Path = config.DEMO_SHS_INSTRUMENT_FILE) -> pd.DataFrame:
+    """
+    Load the synthetic demo SHS instrument dataset (fictitious data, shipped
+    in the repo - see examples/generate_demo_data.py). Plain local read, no
+    Azure access required.
+    """
+    return pd.read_csv(file_path)
+
+def load_demo_shs_holder_data(file_path: Path = config.DEMO_SHS_HOLDER_FILE) -> pd.DataFrame:
+    """
+    Load the synthetic demo SHS holder dataset (fictitious data, shipped in
+    the repo - see examples/generate_demo_data.py). Plain local read, no
+    Azure access required.
+    """
+    return pd.read_csv(file_path)
+
 def extract_scenario_info(df: pd.DataFrame) -> Tuple[List[str], List[str], List[str]]:
     """Extract unique scenarios, eco services, and aggregation types from data."""
     
