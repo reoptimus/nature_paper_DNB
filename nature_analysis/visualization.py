@@ -188,7 +188,7 @@ def plot_loss_heatmap_by_dimension(results_df: pd.DataFrame,
         cmap = 'Reds_r'
         annotation_fmt = lambda x: f"{x * 100:.2f}%" if pd.notnull(x) else ""
     elif value_type == 'absolute_eur':
-        value_col = 'VALUE_LOSS'
+        value_col = 'delta_indout'
         unit = 'eur'
         cmap = 'Reds_r'
         annotation_fmt = lambda x: f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
@@ -265,7 +265,7 @@ def plot_loss_heatmap_by_region(results_df: pd.DataFrame,
         cmap = 'Reds_r'
         annotation_fmt = lambda x: f"{x * 100:.2f}%" if pd.notnull(x) else ""
     elif value_type == 'absolute_eur':
-        value_col = 'VALUE_LOSS'
+        value_col = 'delta_indout'
         unit = 'eur'
         cmap = 'Reds_r'
         annotation_fmt = lambda x: f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
@@ -301,21 +301,102 @@ def plot_loss_heatmap_by_region(results_df: pd.DataFrame,
 
 def create_summary_statistics(results_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Create summary statistics from results.
-    
+    Create summary statistics from SHS/AnaCredit portfolio-loss results
+    (the output of SHSAnalysisPipeline.calculate_financial_impacts()).
+
     Returns:
-        DataFrame with summary statistics by scenario, ecosystem service, etc.
+        DataFrame with summary statistics by scenario, ecosystem service, holder sector.
     """
-    summary = results_df.groupby(['Scenario', 'Eco_serv', 'HOLDER_SECTOR']).agg({
+    summary = results_df.groupby(['scenario', 'eco_service', 'HOLDER_SECTOR']).agg({
         'VALUE_LOSS': ['sum', 'mean', 'std'],
         'OBS_VALUE': 'sum'
     }).reset_index()
-    
+
     summary.columns = ['_'.join(col).strip('_') for col in summary.columns.values]
-    summary['Perc_LOSS'] = (summary['VALUE_LOSS_sum'] / 
+    summary['Perc_LOSS'] = (summary['VALUE_LOSS_sum'] /
                            summary['OBS_VALUE_sum']) * 100
-    
+
     return summary
+
+
+def plot_portfolio_loss_heatmap(results_df: pd.DataFrame,
+                                eco_service: str,
+                                scenario: str,
+                                dimension_x: str,
+                                dimension_y: str,
+                                value_type: str = 'percentage',
+                                output_path: Optional[str] = None) -> plt.Figure:
+    """
+    Create a heatmap of SHS/AnaCredit portfolio-loss results by two
+    dimensions (e.g. HOLDER_SECTOR x nace_lvl1).
+
+    Unlike plot_loss_heatmap_by_dimension() (built for the *production-loss*
+    dataframe from pipeline.prepare_production_loss_analysis(), with columns
+    'eco_serv'/'Vuln_type'/'delta_indout'), this operates directly on the
+    output of SHSAnalysisPipeline.calculate_financial_impacts() /
+    AnaCreditAnalysisPipeline.calculate_delta_CET1(), with columns
+    'eco_service'/'scenario'/'VALUE_LOSS'/'OBS_VALUE'.
+
+    Args:
+        results_df: SHS/AnaCredit portfolio-loss results dataframe
+        eco_service: Ecosystem service filter (matches the 'eco_service' column)
+        scenario: Scenario filter (matches the 'scenario' column)
+        dimension_x: Column for the y-axis (rows)
+        dimension_y: Column for the x-axis (columns)
+        value_type: 'percentage' (loss / value, %), 'absolute_eur' (VALUE_LOSS),
+            or 'obs_value' (OBS_VALUE)
+        output_path: Optional path to save the figure as PNG
+
+    Returns:
+        matplotlib Figure object
+    """
+    filtered = results_df[
+        (results_df['eco_service'] == eco_service) &
+        (results_df['scenario'] == scenario)
+    ][[dimension_x, dimension_y, 'VALUE_LOSS', 'OBS_VALUE']]
+
+    agg = filtered.groupby([dimension_x, dimension_y], as_index=False).agg({
+        'VALUE_LOSS': 'sum',
+        'OBS_VALUE': 'sum'
+    })
+    agg['Perc_LOSS'] = agg['VALUE_LOSS'] / agg['OBS_VALUE']
+
+    if value_type == 'percentage':
+        value_col = 'Perc_LOSS'
+        unit = '%'
+        cmap = 'Reds_r'
+        annotation_fmt = lambda x: f"{x * 100:.2f}%" if pd.notnull(x) else ""
+    elif value_type == 'absolute_eur':
+        value_col = 'VALUE_LOSS'
+        unit = 'eur'
+        cmap = 'Reds_r'
+        annotation_fmt = lambda x: f"{x / 1_000_000:.2f}m" if pd.notnull(x) else ""
+    else:  # 'obs_value': original portfolio value
+        value_col = 'OBS_VALUE'
+        unit = 'eur'
+        cmap = 'Blues'
+        annotation_fmt = lambda x: f"{x / 1_000_000:.2f}m" if pd.notnull(x) else ""
+
+    pivot_data = agg.pivot(index=dimension_x, columns=dimension_y, values=value_col)
+    pivot_data = pivot_data.sort_values(by=pivot_data.columns[0], ascending=True)
+
+    annotations = pivot_data.map(annotation_fmt)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(pivot_data, annot=annotations, fmt="", cmap=cmap,
+                linewidths=0.5, ax=ax)
+
+    title = f"Portfolio losses in {unit} by {dimension_x} and {dimension_y}\n({eco_service}, {scenario})"
+    ax.set_title(title)
+    ax.set_xlabel(dimension_y)
+    ax.set_ylabel(dimension_x)
+    plt.tight_layout()
+
+    if output_path:
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
+
+    return fig
+
 
 def create_visualizations(df_results_: pd.DataFrame,
                           eco_service_: str ,
@@ -324,20 +405,23 @@ def create_visualizations(df_results_: pd.DataFrame,
                           dimension_y: str ,
                           value_type: str ='percentage' # 'percentage', 'absolute_eur', or 'obs_value'
                           ):
-    """Create standard visualization outputs."""                       
+    """
+    Create and save a standard heatmap for SHS/AnaCredit portfolio-loss
+    results (see plot_portfolio_loss_heatmap()).
+    """
     try:
-        fig = plot_loss_heatmap_by_dimension(
+        output_path = config.ANALYSIS_PATH / f'heatmap_{eco_service_}_{scenario_}.png'
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        plot_portfolio_loss_heatmap(
             df_results_,
             eco_service_,
             scenario_,
             dimension_x,
             dimension_y,
-            value_type='percentage' # 'percentage', 'absolute_eur', or 'obs_value'
+            value_type=value_type,
+            output_path=output_path
         )
-        
-        output_path = config.ANALYSIS_PATH / f'heatmap_{eco_service_}_{scenario_}.png'
-        fig.savefig(output_path, dpi=300, bbox_inches='tight')
         print(f"Saved heatmap to {output_path}")
-        
+
     except Exception as e:
         print(f"Could not create visualization: {e}")

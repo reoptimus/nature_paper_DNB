@@ -164,6 +164,13 @@ country and NACE sector codes so the results reflect genuine
 ecosystem-vulnerability patterns. Pass `n_instruments=` for an even faster
 run, e.g. `nature_analysis.run_demo(n_instruments=30)`.
 
+**Prefer a guided, cell-by-cell walkthrough?** Open
+[`examples/demo_walkthrough.ipynb`](examples/demo_walkthrough.ipynb) in
+Jupyter (`pip install jupyter`, then `jupyter notebook
+examples/demo_walkthrough.ipynb`) - it runs the same demo with explanations
+of the Merton model and two charts (loss by sector, loss by ecosystem
+service).
+
 ### Example 0b: Quick Test on Real Data (Fast & Lightweight) ⚡
 
 **Perfect for testing, demos, or first-time users - inside the DNB
@@ -292,19 +299,24 @@ nature_paper_DNB/
 │
 ├── examples/                   # Usage examples
 │   ├── __init__.py
-│   ├── generate_demo_data.py           # Regenerates data/demo/ (synthetic, no DNB access needed)
-│   ├── basic_usage.py                  # SHS + AnaCredit + prudential workflows
-│   ├── using_stored_vulnerabilities.py # Standard workflow walkthrough
-│   └── vulnerability_generation.py     # Regeneration workflow walkthrough
+│   ├── demo_walkthrough.ipynb           # Notebook: run_demo() explained step by step, no DNB access needed
+│   ├── generate_demo_data.py            # Regenerates data/demo/ (synthetic, no DNB access needed)
+│   ├── basic_usage.py                   # SHS + AnaCredit + prudential workflows
+│   ├── using_stored_vulnerabilities.py  # Standard workflow walkthrough
+│   └── vulnerability_generation.py      # Regeneration workflow walkthrough
 │
-├── data/                       # Reference data
-│   ├── NACE_mapping.csv       # NACE to EXIOBASE mapping
-│   ├── region_mapping.csv     # Region mapping
-│   └── ...                    # Other reference files
+├── data/                       # Reference data (portable, no DNB access needed)
+│   ├── demo/                             # Synthetic demo instruments/holders
+│   ├── DS_Vuln_update/Vuln_final_store/  # Pre-generated Final_Vuln_file.csv / Final_alpha_file.xlsx
+│   ├── EXIOBASE_to_NACElvl2_tab.xlsx     # NACE to EXIOBASE mapping
+│   ├── regions_ISO2_continent_area.csv   # Region/country mapping
+│   └── ...                               # Other reference files
 │
-└── legacy/                     # Original reference code
+└── legacy/                     # Original pre-refactor code (not maintained - see legacy/README.md)
     ├── __init__.py
-    └── SHS_process.py         # Original implementation
+    ├── README.md
+    ├── SHS_process.py
+    └── DS_functions.py
 ```
 
 ### Module Responsibilities
@@ -411,9 +423,27 @@ print("Visualization saved to pollination_heatmap.png")
 ```
 
 To plot SHS/AnaCredit portfolio-loss results (`VALUE_LOSS`, `OBS_VALUE`,
-`HOLDER_SECTOR`, ...), pivot/plot them directly with pandas/seaborn -
-`visualization.py`'s heatmap helpers do not yet have a variant for that
-column layout (see the note under `SHSAnalysisPipeline` above).
+`HOLDER_SECTOR`, ...) - e.g. the output of `run_demo()` or
+`run_pipeline()` - use `plot_portfolio_loss_heatmap()` instead:
+
+```python
+from nature_analysis import visualization, SHSAnalysisPipeline
+
+pipeline = SHSAnalysisPipeline()
+results = pipeline.run_full_pipeline(demo=True)  # or demo=False with DNB access
+
+fig = visualization.plot_portfolio_loss_heatmap(
+    results_df=results,
+    eco_service=results['eco_service'].iloc[0],
+    scenario=results['scenario'].iloc[0],
+    dimension_x='HOLDER_SECTOR',
+    dimension_y='nace_lvl1',
+    value_type='percentage',
+    output_path='portfolio_heatmap.png'
+)
+
+print("Visualization saved to portfolio_heatmap.png")
+```
 
 ### Sensitivity Analysis
 
@@ -936,15 +966,17 @@ pipeline = SHSAnalysisPipeline()
 
 **Output:** Portfolio losses aggregated by holder, sector, geography, ecosystem service, scenario
 
-**Note:** `create_plots` is currently a no-op. `visualization.py`'s
-`create_visualizations()`/`create_summary_statistics()` helpers expect
-columns named `Scenario`/`Eco_serv`, while this pipeline's output uses
-`scenario`/`eco_service` - rename columns before calling them. Also note
+**Note:** `create_plots=True` saves one portfolio-loss heatmap (holder
+sector x issuer sector, for the first scenario/ecosystem service in the
+results) via `visualization.create_visualizations()` /
+`plot_portfolio_loss_heatmap()`, to `config.ANALYSIS_PATH`. For other
+dimensions/scenarios, call `visualization.plot_portfolio_loss_heatmap()`
+directly (see [Custom Visualization](#custom-visualization)). Note that
 `plot_loss_heatmap_by_dimension()` and `plot_loss_heatmap_by_region()` are
-built for the *production-loss* dataframe returned by
-`pipeline.prepare_production_loss_analysis()` (columns `eco_serv`,
-`Vuln_type`, `delta_indout`, `indout`), not for SHS portfolio-loss results -
-check column names before reusing a plotting helper across the two outputs.
+a different pair of functions, built for the *production-loss* dataframe
+returned by `pipeline.prepare_production_loss_analysis()` (columns
+`eco_serv`, `Vuln_type`, `delta_indout`, `indout`), not for SHS
+portfolio-loss results.
 
 #### `AnaCreditAnalysisPipeline`
 
@@ -1117,7 +1149,10 @@ The underlying calculation logic is identical, but the data and final aggregatio
 
 ## 📄 License
 
-MIT License
+[MIT License](LICENSE) - see the `LICENSE` file. The copyright holder
+listed there (`Nature Analysis Team`) is a placeholder matching
+`setup.py`'s `author` field; update it to the appropriate legal entity
+before distributing the package externally.
 
 ---
 
