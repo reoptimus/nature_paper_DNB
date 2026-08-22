@@ -7,6 +7,30 @@ import scipy.stats as stats
 from scipy.stats import norm
 from . import config
 
+def pd_to_dd(pd: float) -> float:
+    """
+    Convert probability of default to distance to default.
+
+    Args:
+        pd: Probability of default (0-1)
+
+    Returns:
+        Distance to default
+    """
+    return -norm.ppf(pd)
+
+def dd_to_pd(dd: float) -> float:
+    """
+    Convert distance to default to probability of default.
+
+    Args:
+        dd: Distance to default
+
+    Returns:
+        Probability of default (0-1)
+    """
+    return norm.cdf(-dd)
+
 def calculate_asset_volatility(dd: float, vol: float, debt_ratio: float) -> float:
     """
     Derive asset volatility from stock price volatility, DD, and debt ratio.

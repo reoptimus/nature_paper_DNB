@@ -45,7 +45,7 @@ results = pipeline.run_full_pipeline()
 
 # ✗ AVOID: Direct function calls (unless debugging)
 from nature_analysis import vulnerability
-dep_df = vulnerability.calculate_depreciation(...)
+dep_df = vulnerability.calculate_deltaPD_SHS(...)
 ```
 
 **Key Differences:**
@@ -112,8 +112,8 @@ shapes = nature_analysis.regenerate_vulnerability_files()
 2. 🔄 **Processes each scenario** independently (World 10%, EU 3%, your custom scenarios)
 3. 📊 **Generates vulnerability scores** from ENCORE + EXIOBASE + ND-GAIN
 4. 💾 **Outputs combined files:**
-   - `Vuln_final.csv` - All scenarios merged
-   - `Alpha_final.xlsx` - All shock parameters merged
+   - `Final_Vuln_file.csv` - All scenarios merged
+   - `Final_alpha_file.xlsx` - All shock parameters merged
 
 **No instrument data needed!** Completely independent of SHS/AnaCredit financial analysis.
 
@@ -123,7 +123,7 @@ shapes = nature_analysis.regenerate_vulnerability_files()
 
 ### Overview
 
-The package uses **vulnerability scores** and **alpha shock parameters** that quantify how ecosystem service disruptions affect economic sectors by country. These files (`Vuln_final.csv` and `Alpha_final.xlsx`) are **pre-generated and stored** in the data directory.
+The package uses **vulnerability scores** and **alpha shock parameters** that quantify how ecosystem service disruptions affect economic sectors by country. These files (`Final_Vuln_file.csv` and `Final_alpha_file.xlsx`) are **pre-generated and stored** in the data directory.
 
 **You typically DON'T need to regenerate these files** unless:
 - Updating ENCORE ecosystem service dependency ratings
@@ -147,7 +147,7 @@ The package uses **vulnerability scores** and **alpha shock parameters** that qu
 │ VULNERABILITY GENERATION (Standalone)                          │
 │ ────────────────────────────────────────────────────────────   │
 │ Input:  ENCORE + EXIOBASE + ND-GAIN + Scenario configs        │
-│ Output: Vuln_final.csv + Alpha_final.xlsx                     │
+│ Output: Final_Vuln_file.csv + Final_alpha_file.xlsx            │
 │ Time:   10-30 minutes                                          │
 │ Depends on: Ecosystem data ONLY                               │
 │                                                                │
@@ -160,7 +160,7 @@ The package uses **vulnerability scores** and **alpha shock parameters** that qu
 ┌────────────────────────────────────────────────────────────────┐
 │ FINANCIAL ANALYSIS (SHS or AnaCredit Pipeline)                 │
 │ ────────────────────────────────────────────────────────────   │
-│ Input:  Vuln_final.csv + Instrument data (SHS/AnaCredit)      │
+│ Input:  Final_Vuln_file.csv + Instrument data (SHS/AnaCredit)  │
 │ Output: Portfolio losses by holder/instrument                 │
 │ Time:   Minutes                                                │
 │ Depends on: Vulnerability files + financial instruments       │
@@ -184,11 +184,11 @@ You want to analyze the impact of a 5% production shock (new scenario) on your p
    shapes = nature_analysis.regenerate_vulnerability_files()
    ```
    - Takes 10-30 minutes total
-   - Generates new Vuln_final.csv with ALL scenarios including your 5% shock
+   - Generates new Final_Vuln_file.csv with ALL scenarios including your 5% shock
 
 3. **Run financial analysis** (uses existing instrument data)
    ```python
-   python examples/basic_usage.py  # or anacredit_usage.py
+   python examples/basic_usage.py
    ```
    - Takes minutes
    - Calculates portfolio losses using new vulnerability scores
@@ -235,7 +235,7 @@ Apply nature degradation indices → Vuln = DS × Nature_Index
                                                       ↓
                                     Calculate for government/financial sectors
                                                       ↓
-                            Output: Vuln_final.csv + Alpha_final.xlsx
+                            Output: Final_Vuln_file.csv + Final_alpha_file.xlsx
 ```
 
 **Key Calculations:**
@@ -391,7 +391,7 @@ Key functions in `vulnerability_generator.py`:
 
 ### Output Files
 
-**Vuln_final.csv structure:**
+**Final_Vuln_file.csv structure:**
 ```
 region, EXIOBASE, eco_serv, indout, NACE Code, Adj_ind,
 0_World_shock_10perc_DS_total_SR, 0_World_shock_10perc_DS_total_max,
@@ -399,7 +399,7 @@ region, EXIOBASE, eco_serv, indout, NACE Code, Adj_ind,
 1_EUshock_15perc_DS_total_SR, ...
 ```
 
-**Alpha_final.xlsx structure:**
+**Final_alpha_file.xlsx structure:**
 ```
 Area, eco_serv,
 0_World_shock_10perc_DS_total_SR_alpha, 0_World_shock_10perc_DS_total_max_alpha,
@@ -413,19 +413,14 @@ Area, eco_serv,
 
 ```python
 # Load pre-generated vulnerability data
-from nature_analysis import AnalysisPipeline
+from nature_analysis import SHSAnalysisPipeline
 
-pipeline = AnalysisPipeline()
-pipeline.load_all_data()  # Loads Vuln_final.csv and Alpha_final.xlsx
+pipeline = SHSAnalysisPipeline()
+pipeline.load_all_data()  # Loads Final_Vuln_file.csv and Final_alpha_file.xlsx
 
-# Calculate depreciation using stored vulnerabilities
-depreciation_df = pipeline.calculate_instrument_depreciations()
-
-# Apply financial models
-impact_df = pipeline.calculate_financial_impacts(depreciation_df)
-
-# Aggregate results
-results = pipeline.calculate_shs_losses(impact_df)
+# Calculate depreciation, apply the Merton model, and aggregate portfolio
+# losses by holder - all in one call
+results = pipeline.calculate_financial_impacts()
 ```
 
 See `examples/using_stored_vulnerabilities.py` for complete example.
@@ -434,7 +429,7 @@ See `examples/using_stored_vulnerabilities.py` for complete example.
 
 | Aspect | Standard Workflow | Regeneration Workflow |
 |--------|-------------------|----------------------|
-| **Input** | Vuln_final.csv, Alpha_final.xlsx | ENCORE, EXIOBASE, ND-GAIN raw data |
+| **Input** | Final_Vuln_file.csv, Final_alpha_file.xlsx | ENCORE, EXIOBASE, ND-GAIN raw data |
 | **Time** | Minutes | 10-30 minutes |
 | **Frequency** | Every analysis | Rarely (only when updating data) |
 | **Output** | Portfolio losses | Vulnerability files |
@@ -510,7 +505,7 @@ Financial Impacts CSV (by instrument, ecosystem service, scenario)
 |--------|----------------|-------------|
 | `config.py` | Centralized parameters | Constants, paths (SHS & AnaCredit), settings, vulnerability generation params |
 | `data_loader.py` | Load and preprocess data | DataFrames (SHS/AnaCredit instruments, vulnerability, alpha, holders) |
-| `vulnerability_generator.py` | **[Optional]** Generate vulnerability files | Vuln_final.csv, Alpha_final.xlsx from ENCORE/EXIOBASE/ND-GAIN |
+| `vulnerability_generator.py` | **[Optional]** Generate vulnerability files | Final_Vuln_file.csv, Final_alpha_file.xlsx from ENCORE/EXIOBASE/ND-GAIN |
 | `vulnerability.py` | Calculate depreciations | Depreciation matrix (instruments × scenarios) |
 | `financial.py` | Financial modeling | PD, LGD, bond prices, equity prices |
 | `pipeline.py` | Orchestration | Two pipeline classes (SHSAnalysisPipeline, AnaCreditAnalysisPipeline) |
@@ -527,13 +522,14 @@ Financial Impacts CSV (by instrument, ecosystem service, scenario)
 - `prepare_vulnerability_with_alpha()` - Merge vulnerability and shock data
 
 #### Vulnerability Calculations (`vulnerability.py`)
-- `calculate_depreciation()` - Main depreciation calculation for one scenario (SHS)
-- `calculate_anacredit_depreciation()` - Depreciation calculation for AnaCredit (wrapper)
+- `calculate_deltaPD_SHS()` - PD variation for one scenario/ecosystem service (SHS)
+- `calculate_deltaPD_anacredit()` - Same calculation for AnaCredit (adds pd imputation by NACE group)
 - `compute_weighted_metric()` - Production-weighted averaging across sectors
-- `calculate_all_depreciations()` - Parallel processing wrapper for all scenarios (SHS)
-- `calculate_all_anacredit_depreciations()` - Parallel processing wrapper for AnaCredit
+- `calculate_all_deltaPD_SHS()` - Parallel processing wrapper for all scenarios (SHS)
+- `calculate_all_deltaPD_anacredit()` - Parallel processing wrapper for AnaCredit
+- `calculate_PD_EL_RWA_variation()` - AnaCredit only: chains delta-PD, then `financial.calculate_delta_EL_impacts()`/`calculate_delta_RWA_impacts()`
 
-**Note:** Despite having separate functions, the underlying calculation logic is identical.
+**Note:** Despite having separate functions, the underlying PD-variation calculation logic is identical for SHS and AnaCredit.
 
 #### Financial Models (`financial.py`)
 - `pd_to_dd()` - Convert probability of default to distance to default
@@ -547,17 +543,15 @@ Financial Impacts CSV (by instrument, ecosystem service, scenario)
 #### Pipeline (`pipeline.py`)
 - `SHSAnalysisPipeline` class - Main orchestration for SHS data
   - `load_all_data()` - Load all required files (SHS instruments, vulnerability, alpha, NACE, holders)
-  - `calculate_instrument_depreciations()` - Calculate depreciation matrix
-  - `calculate_financial_impacts()` - Apply Merton model
-  - `calculate_shs_losses()` - Aggregate portfolio losses by holder
-  - `run_full_pipeline()` - Execute complete SHS workflow
-  - `run_quick_test()` - Fast test with limited data
+  - `calculate_financial_impacts()` - Single call: depreciation matrix + Merton model + portfolio loss aggregation by holder (no separate depreciation-matrix step)
+  - `run_full_pipeline()` - `load_all_data()` + `calculate_financial_impacts()`
+  - `run_quick_test(n_instruments=100)` - Same, limited to `n_instruments`/first scenario/first ES
 
 - `AnaCreditAnalysisPipeline` class - Main orchestration for AnaCredit data
   - `load_all_data()` - Load all required files (AnaCredit instruments, vulnerability, alpha, NACE)
-  - `calculate_instrument_depreciations()` - Calculate depreciation matrix
-  - `calculate_financial_impacts()` - Apply Merton model
-  - `run_full_pipeline()` - Execute complete AnaCredit workflow
+  - `calculate_delta_CET1()` - PD/EL/RWA variation per credit line, merged with COREP, aggregated to delta CET1 ratio per institution (requires DNB Azure access for AnaCredit + COREP)
+  - `run_full_pipeline()` - `load_all_data()` + `calculate_delta_CET1()`
+  - `run_quick_test(n_instruments=100)` - Same, limited subset (still needs COREP access)
 
 ---
 
@@ -619,8 +613,8 @@ If you need to add a third data source (e.g., "NewSource"):
 
 3. **Add wrapper functions** to `vulnerability.py`:
    ```python
-   def calculate_newsource_depreciation(*args, **kwargs):
-       return calculate_depreciation(*args, **kwargs)
+   def calculate_deltaPD_newsource(*args, **kwargs):
+       return calculate_deltaPD_SHS(*args, **kwargs)
    ```
 
 4. **Create pipeline class** in `pipeline.py`:
@@ -889,8 +883,8 @@ If you need to add a third data source (e.g., "NewSource"):
 | **Pipeline class** | `SHSAnalysisPipeline` | `AnaCreditAnalysisPipeline` |
 | **Config path** | `SHS_INSTRUMENT_FILE` | `ANACREDIT_INSTRUMENT_FILE` |
 | **Loader function** | `load_SHS_data()` | `load_Anacredit_data()` |
-| **Depreciation function** | `calculate_depreciation()` | `calculate_anacredit_depreciation()` |
-| **Batch processing** | `calculate_all_depreciations()` | `calculate_all_anacredit_depreciations()` |
+| **Depreciation function** | `calculate_deltaPD_SHS()` | `calculate_deltaPD_anacredit()` |
+| **Batch processing** | `calculate_all_deltaPD_SHS()` | `calculate_all_deltaPD_anacredit()` |
 
 ### Shared Components
 
@@ -1059,40 +1053,39 @@ Ask the user for clarification when:
 ## Useful Commands
 
 ```bash
-# Quick test (fast - use this first!)
+# --- No DNB access needed at all ---
+
+# Full SHS pipeline on the synthetic demo dataset (data/demo/)
+python -c "import nature_analysis; nature_analysis.run_demo()"
+
+# --- Require DNB Azure access (real SHS/AnaCredit/COREP data) ---
+
+# Quick test (fast - use this first, from inside the DNB environment!)
 python -c "import nature_analysis; nature_analysis.run_quick_test(n_instruments=10)"
 
 # Quick test for AnaCredit
 python -c "import nature_analysis; nature_analysis.run_anacredit_quick_test(n_instruments=10)"
 
-# Run quick test examples
-python examples/quick_test.py
-
-# Run SHS examples
+# Run SHS/AnaCredit/prudential examples
 python examples/basic_usage.py
 
-# Run AnaCredit examples
-python examples/anacredit_usage.py
-
-# Run full test suite
-python tests/test_suite.py
-
-# Quick validation
-python tests/quick_compare.py
-
-# Test imports
-python tests/test_import.py
-
-# Check package structure
-python -c "import nature_analysis; print(dir(nature_analysis))"
-
-# Profile performance (SHS)
+# Profile performance
 python -m cProfile -o profile.stats examples/basic_usage.py
 python -c "import pstats; p = pstats.Stats('profile.stats'); p.sort_stats('cumtime'); p.print_stats(20)"
 
-# Profile performance (AnaCredit)
-python -m cProfile -o profile.stats examples/anacredit_usage.py
-python -c "import pstats; p = pstats.Stats('profile.stats'); p.sort_stats('cumtime'); p.print_stats(20)"
+# --- No DNB access needed ---
+
+# Import + public API surface check
+python tests/test_import.py
+
+# Unit tests (financial formulas, vulnerability helpers)
+python tests/test_suite.py
+
+# pytest suite for vulnerability generation (mocked data)
+python -m pytest tests/test_vulnerability_generator.py -v
+
+# Check package structure
+python -c "import nature_analysis; print(dir(nature_analysis))"
 ```
 
 ---

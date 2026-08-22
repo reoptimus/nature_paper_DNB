@@ -39,6 +39,10 @@ env/
 .DS_Store
 Thumbs.db
 
+# Accidental Windows/PowerShell profile artifacts
+Microsoft/
+debug.log
+
 # Project specific
 !*.csv
 !*.xlsx

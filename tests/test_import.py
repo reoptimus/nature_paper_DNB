@@ -18,7 +18,7 @@ def test_imports():
     # Test 1: Import package
     print("\n1. Testing main package import...")
     try:
-        import shs_nature_analysis as shs
+        import nature_analysis as shs
         print(f"   ✓ Package imported successfully")
         print(f"   Version: {shs.__version__}")
     except Exception as e:
@@ -37,7 +37,7 @@ def test_imports():
     # Test 3: Import main pipeline class
     print("\n3. Testing SHSAnalysisPipeline import...")
     try:
-        from shs_nature_analysis import SHSAnalysisPipeline
+        from nature_analysis import SHSAnalysisPipeline
         print(f"   ✓ SHSAnalysisPipeline imported successfully")
     except Exception as e:
         print(f"   ✗ Failed to import SHSAnalysisPipeline: {e}")
@@ -57,7 +57,7 @@ def test_imports():
     # Test 5: Check config values
     print("\n5. Testing config access...")
     try:
-        from shs_nature_analysis import config
+        from nature_analysis import config
         print(f"   ✓ RISK_FREE_RATE: {config.RISK_FREE_RATE}")
         print(f"   ✓ PD_CALIB: {config.PD_CALIB}")
         print(f"   ✓ LGD_CALIB: {config.LGD_CALIB}")
@@ -68,7 +68,7 @@ def test_imports():
     # Test 6: Check financial functions
     print("\n6. Testing financial functions...")
     try:
-        from shs_nature_analysis import financial
+        from nature_analysis import financial
         assert hasattr(financial, 'pd_to_dd'), "pd_to_dd not found"
         assert hasattr(financial, 'dd_to_pd'), "dd_to_pd not found"
         assert hasattr(financial, 'calculate_asset_volatility'), "calculate_asset_volatility not found"
@@ -80,7 +80,7 @@ def test_imports():
     # Test 7: Test a simple calculation
     print("\n7. Testing a simple calculation...")
     try:
-        from shs_nature_analysis import financial
+        from nature_analysis import financial
         pd_value = 0.05
         dd = financial.pd_to_dd(pd_value)
         pd_back = financial.dd_to_pd(dd)
@@ -93,7 +93,7 @@ def test_imports():
     # Test 8: Check visualization module
     print("\n8. Testing visualization module...")
     try:
-        from shs_nature_analysis import visualization
+        from nature_analysis import visualization
         assert hasattr(visualization, 'create_heatmap'), "create_heatmap not found"
         assert hasattr(visualization, 'plot_loss_heatmap_by_dimension'), "plot_loss_heatmap_by_dimension not found"
         print(f"   ✓ Visualization functions accessible")

@@ -18,7 +18,8 @@ __version__ = '2.0.0'
 __author__ = 'Nature Analysis Team'
 
 # Import main components for easy access
-from .pipeline import SHSAnalysisPipeline as AnalysisPipeline
+from .pipeline import SHSAnalysisPipeline
+from .pipeline import SHSAnalysisPipeline as AnalysisPipeline  # backwards-compatible alias
 from .pipeline import AnaCreditAnalysisPipeline
 from . import config
 from . import data_loader
@@ -54,8 +55,8 @@ def run_pipeline(create_plots=True, **kwargs):
         - Security_type: 'Bonds' or 'Equity'
         - nace_lvl1: NACE economic sector code (level 1)
         - ISSUER_COUNTRY: Country code of security issuer
-        - Eco_serv: Ecosystem service (e.g., 'Water flow regulation')
-        - Scenario: Shock scenario identifier
+        - eco_service: Ecosystem service (e.g., 'Water flow regulation')
+        - scenario: Shock scenario identifier
         - VALUE_LOSS: Absolute value loss in EUR
         - OBS_VALUE: Original portfolio value in EUR
 
@@ -103,6 +104,40 @@ def run_quick_test(n_instruments=100):
     """
     pipeline = AnalysisPipeline()
     return pipeline.run_quick_test(n_instruments=n_instruments)
+
+
+def run_demo(n_instruments=None):
+    """
+    Run the SHS pipeline end to end on a synthetic demo dataset - no DNB
+    Azure access and no confidential data required.
+
+    The instruments and holders are entirely fictitious (see
+    examples/generate_demo_data.py), but the ecosystem-vulnerability data
+    driving the results is the real, non-confidential data shipped in
+    data/DS_Vuln_update/Vuln_final_store/. This is the easiest way to see
+    the whole pipeline (depreciation -> Merton model -> portfolio losses by
+    holder) working, e.g. for a first-time user or someone outside DNB.
+
+    Args:
+        n_instruments (int, optional): if given, only use the first
+            n_instruments demo instruments and the first scenario/ecosystem
+            service (faster). If None (default), run on all ~300 demo
+            instruments and all configured scenarios/ecosystem services.
+
+    Returns:
+        pd.DataFrame: Portfolio losses by holder sector/geography,
+        instrument type, ecosystem service and scenario (same shape as
+        run_pipeline()).
+
+    Example:
+        >>> import nature_analysis
+        >>> results = nature_analysis.run_demo()
+        >>> print(f"Total (fictitious) loss: €{results['VALUE_LOSS'].sum():,.0f}")
+    """
+    pipeline = AnalysisPipeline()
+    if n_instruments is None:
+        return pipeline.run_full_pipeline(demo=True)
+    return pipeline.run_quick_test(n_instruments=n_instruments, demo=True)
 
 
 def run_anacredit_pipeline(create_plots=False, **kwargs):
@@ -170,9 +205,11 @@ def run_anacredit_quick_test(n_instruments=100):
 # Define what gets imported with "from nature_analysis import *"
 __all__ = [
     'AnalysisPipeline',
+    'SHSAnalysisPipeline',
     'AnaCreditAnalysisPipeline',
     'run_pipeline',
     'run_quick_test',
+    'run_demo',
     'run_anacredit_pipeline',
     'run_anacredit_quick_test',
     'regenerate_vulnerability_files',
