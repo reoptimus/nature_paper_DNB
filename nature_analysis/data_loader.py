@@ -476,10 +476,11 @@ from io import BytesIO
 from pathlib import Path
 from typing import Optional
 
-import pandas as pdpip
-from azure.identity import DefaultAzureCredential, AzureCliCredential
-from azure.storage.filedatalake import DataLakeServiceClient
-from azure.core.exceptions import ResourceModifiedError, ResourceExistsError
+# NOTE: the azure-* packages are only required to load confidential DNB data
+# (SHS, AnaCredit, COREP, ARS Solvency 2) directly from Azure Data Lake. They
+# are imported lazily, inside the functions below, so that the rest of the
+# package (vulnerability generation, financial models, reference data) can be
+# imported and used without the azure SDK installed.
 
 # ----------------------------
 # Authentication / Credentials
@@ -496,6 +497,8 @@ class LoginMethod(Enum):
         Return a credential suitable for DataLakeServiceClient.
         For SAS and account key we return the raw string (SDK supports both).
         """
+        from azure.identity import DefaultAzureCredential, AzureCliCredential
+
         if self is LoginMethod.DEFAULT:
             return DefaultAzureCredential()
         if self is LoginMethod.AZCLI:
@@ -519,10 +522,12 @@ class LoginMethod(Enum):
 # Client factories
 # ----------------------------
 
-def get_service_client(account_name: str, method: LoginMethod) -> DataLakeServiceClient:
+def get_service_client(account_name: str, method: LoginMethod) -> "DataLakeServiceClient":
     """
     Build a DataLakeServiceClient for the given account name and login method.
     """
+    from azure.storage.filedatalake import DataLakeServiceClient
+
     account_url = f"https://{account_name}.dfs.core.windows.net"
     credential = method.get_credential()
     return DataLakeServiceClient(account_url=account_url, credential=credential)
@@ -574,6 +579,8 @@ def upload_file(
     Raises:
         FileExistsError: If file exists and overwrite=False.
     """
+    from azure.core.exceptions import ResourceModifiedError
+
     file_client = get_file_client(account_name, container_name, remote_filepath, method)
 
     created_now = False

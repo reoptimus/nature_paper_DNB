@@ -32,7 +32,7 @@ setup(
     description="Quantify how ecosystem service disruptions impact financial portfolios",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/shs-nature-analysis",
+    url="https://github.com/reoptimus/nature_paper_DNB",
     packages=find_packages(include=['nature_analysis', 'nature_analysis.*']),
     classifiers=[
         "Development Status :: 4 - Beta",

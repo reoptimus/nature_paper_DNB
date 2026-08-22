@@ -202,7 +202,51 @@ class SHSAnalysisPipeline:
         results_merged = results_merged.rename(columns={'nace_0d_code': 'nace_lvl1'})
         results_merged = results_merged.drop(columns=['nace_2d_code'])
         return results_merged
-    
+
+    def run_full_pipeline(self, create_plots: bool = False) -> pd.DataFrame:
+        """
+        Run the complete SHS workflow: load all data, then calculate financial
+        impacts and portfolio losses aggregated by holder.
+
+        Args:
+            create_plots: reserved for future visualization support. Currently
+                a no-op: visualization.py expects different column names
+                ('Scenario', 'Eco_serv') than this method's output
+                ('scenario', 'eco_service'), so plotting is not wired in yet.
+
+        Returns:
+            Portfolio losses by holder sector/geography, instrument type,
+            issuer sector/country, ecosystem service and scenario.
+        """
+        self.load_all_data()
+        return self.calculate_financial_impacts()
+
+    def run_quick_test(self, n_instruments: int = 100) -> pd.DataFrame:
+        """
+        Fast, lightweight run for demos/testing/first-time users: only the
+        first `n_instruments` instruments, the first scenario, and the first
+        ecosystem service.
+
+        Args:
+            n_instruments: number of instruments to keep (default: 100)
+
+        Returns:
+            Portfolio losses for the reduced instrument/scenario/ES subset.
+        """
+        self.load_all_data()
+        self.instrmnt_df = self.instrmnt_df.head(n_instruments)
+        self.scenarios = self.scenarios[:1]
+        self.eco_services = self.eco_services[:1]
+
+        # calculate_financial_impacts() falls back to config.ECO_SERVICES when
+        # it is set, so it is temporarily narrowed here to keep the test fast.
+        original_eco_services = getattr(config, 'ECO_SERVICES', None)
+        config.ECO_SERVICES = self.eco_services
+        try:
+            return self.calculate_financial_impacts()
+        finally:
+            config.ECO_SERVICES = original_eco_services
+
 
 class AnaCreditAnalysisPipeline:
     """Pipeline for running AnaCredit nature analysis."""
@@ -292,6 +336,55 @@ class AnaCreditAnalysisPipeline:
         logger.info(f"Saved AnaCredit depreciation data to {output_file}")
 
         return CET1_results
+
+    def run_full_pipeline(self, create_plots: bool = False) -> pd.DataFrame:
+        """
+        Run the complete AnaCredit workflow: load all data, then calculate the
+        CET1 impact per credit institution.
+
+        Note: this always requires DNB Azure access for the confidential
+        AnaCredit and COREP source data - there is no local/offline mode.
+
+        Args:
+            create_plots: unused (AnaCredit results are not plotted). Kept
+                for API symmetry with SHSAnalysisPipeline.run_full_pipeline().
+
+        Returns:
+            CET1 and delta_CET1_ratio per institution, scenario, ecosystem
+            service.
+        """
+        self.load_all_data()
+        return self.calculate_delta_CET1()
+
+    def run_quick_test(self, n_instruments: int = 100) -> pd.DataFrame:
+        """
+        Fast, lightweight run for demos/testing: only the first
+        `n_instruments` instruments, the first scenario, and the first
+        ecosystem service.
+
+        Note: still requires DNB Azure access (AnaCredit + COREP data) -
+        reducing n_instruments only cuts compute time, not data access
+        requirements.
+
+        Args:
+            n_instruments: number of instruments to keep (default: 100)
+
+        Returns:
+            CET1 impact results for the reduced instrument/scenario/ES subset.
+        """
+        self.load_all_data()
+        self.instrmnt_df = self.instrmnt_df.head(n_instruments)
+        self.scenarios = self.scenarios[:1]
+        self.eco_services = self.eco_services[:1]
+
+        # calculate_all_deltaPD_anacredit() reads config.ECO_SERVICES directly,
+        # so it is temporarily narrowed here to keep the test fast.
+        original_eco_services = getattr(config, 'ECO_SERVICES', None)
+        config.ECO_SERVICES = self.eco_services
+        try:
+            return self.calculate_delta_CET1()
+        finally:
+            config.ECO_SERVICES = original_eco_services
 
     # def calculate_financial_impacts(self, depreciation_df: pd.DataFrame) -> pd.DataFrame:
     #     """

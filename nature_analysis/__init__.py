@@ -18,7 +18,8 @@ __version__ = '2.0.0'
 __author__ = 'Nature Analysis Team'
 
 # Import main components for easy access
-from .pipeline import SHSAnalysisPipeline as AnalysisPipeline
+from .pipeline import SHSAnalysisPipeline
+from .pipeline import SHSAnalysisPipeline as AnalysisPipeline  # backwards-compatible alias
 from .pipeline import AnaCreditAnalysisPipeline
 from . import config
 from . import data_loader
@@ -54,8 +55,8 @@ def run_pipeline(create_plots=True, **kwargs):
         - Security_type: 'Bonds' or 'Equity'
         - nace_lvl1: NACE economic sector code (level 1)
         - ISSUER_COUNTRY: Country code of security issuer
-        - Eco_serv: Ecosystem service (e.g., 'Water flow regulation')
-        - Scenario: Shock scenario identifier
+        - eco_service: Ecosystem service (e.g., 'Water flow regulation')
+        - scenario: Shock scenario identifier
         - VALUE_LOSS: Absolute value loss in EUR
         - OBS_VALUE: Original portfolio value in EUR
 
@@ -170,6 +171,7 @@ def run_anacredit_quick_test(n_instruments=100):
 # Define what gets imported with "from nature_analysis import *"
 __all__ = [
     'AnalysisPipeline',
+    'SHSAnalysisPipeline',
     'AnaCreditAnalysisPipeline',
     'run_pipeline',
     'run_quick_test',

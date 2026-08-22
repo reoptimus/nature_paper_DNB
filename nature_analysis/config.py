@@ -3,18 +3,29 @@ Configuration settings for SHS Nature Analysis
 """
 from pathlib import Path
 
-# File paths
-BASE_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv/OS-2025') # to be deleted
-DATA_PATH = BASE_PATH / 'git_repo/nature_paper_DNB/data' # to be deleted
+# =============================================================================
+# LOCAL PACKAGE DATA (shipped in this git repo, under data/)
+# =============================================================================
+# These are the reference files that come with the repository: NACE mappings,
+# volatility/debt-ratio tables, and the pre-generated vulnerability/alpha files.
+# They are portable by construction - no DNB access is required to read them.
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DATA_PATH = REPO_ROOT / 'data'
 
-BASE_PATH = Path("./secure/Sebastien/Nature 3.0/Nature_analysis")
-GitRepo_data_PATH = Path('I:/FS/FS/Statsp/000-Beleidsmedewerkers/Sebastien Gallet/Biodiv/OS-2025') / 'git_repo/nature_paper_DNB/data'
-DATA_PATH = BASE_PATH / 'git_repo/nature_paper_DNB/data'
-
-DS_VULN_UPDATE_PATH = GitRepo_data_PATH / 'DS_Vuln_update'
+DS_VULN_UPDATE_PATH = DATA_PATH / 'DS_Vuln_update'
 VULN_config_PATH = DS_VULN_UPDATE_PATH / 'config_store'
 VULN_final_PATH = DS_VULN_UPDATE_PATH / 'Vuln_final_store'
 VULN_PATH = VULN_final_PATH  # Alias for backwards compatibility
+
+# =============================================================================
+# CONFIDENTIAL DNB SOURCE DATA (Azure Data Lake, DNB-internal only)
+# =============================================================================
+# BASE_PATH is the Azure Data Lake blob-path prefix used for confidential DNB
+# source data (SHS, AnaCredit, COREP, ARS Solvency 2). It is NOT a local
+# filesystem path even though it is expressed as a Path: see
+# data_loader.download_csv_to_pandas(). These files can only be loaded from
+# inside the DNB secured environment; there is no local/offline equivalent.
+BASE_PATH = Path("./secure/Sebastien/Nature 3.0/Nature_analysis")
 ANALYSIS_PATH = BASE_PATH / 'results'
 
 ####################################
@@ -52,6 +63,11 @@ ALPHA_FILE = 'Final_alpha_file.xlsx'
 # VULNERABILITY GENERATION PARAMETERS
 # (Optional - only needed if regenerating vulnerability files from scratch)
 # =============================================================================
+# NOTE: unlike the confidential Azure paths above, ENCORE/EXIOBASE/ND-GAIN are
+# large third-party datasets downloaded locally by each analyst (they are not
+# shipped in this repo and not accessed through Azure). Paths below reuse
+# BASE_PATH as a convenient local folder prefix; update BASE_PATH to your own
+# local "downloaded_data" location before running the regeneration workflow.
 
 # Input data sources for vulnerability generation
 # ENCORE: Ecosystem service dependency ratings
