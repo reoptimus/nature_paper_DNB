@@ -3,7 +3,7 @@
 > **A production-ready Python package for quantifying how ecosystem service disruptions impact financial portfolios through credit risk modeling**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-GPLv3%2B-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)]()
 
 ---
@@ -283,7 +283,7 @@ nature_paper_DNB/
 ├── README.md                   # This file
 ├── pyproject.toml              # Package metadata, dependencies, tool config (ruff/pytest/coverage)
 ├── requirements.txt            # Dependencies (pip install -r requirements.txt)
-├── LICENSE                     # MIT
+├── LICENSE                     # GPLv3+
 ├── .gitignore                  # Git ignore rules
 ├── DEVELOPER_GUIDE.md           # Developer guide (architecture, common tasks, pitfalls)
 ├── .github/workflows/tests.yml # CI: lint + tests + coverage, no DNB access needed
@@ -1163,17 +1163,24 @@ The underlying calculation logic is identical, but the data and final aggregatio
 
 ## 📄 License
 
-[MIT License](LICENSE) - see the `LICENSE` file. The copyright holder
-listed there (`Nature Analysis Team`) is a placeholder matching
-`pyproject.toml`'s `authors` field; update it to the appropriate legal
-entity before distributing the package externally.
+[GNU General Public License v3 or later (GPLv3+)](LICENSE) - see the
+`LICENSE` file for the full text. The copyright holder listed there
+(`Nature Analysis Team`) is a placeholder matching `pyproject.toml`'s
+`authors` field; update it to the appropriate legal entity before
+distributing the package externally.
+
+**In practice**, GPLv3+ means: anyone can use, study, and run this code
+freely; if you distribute this package (modified or not), you must do so
+under the GPL as well, and make the corresponding source code available to
+whoever receives it. There is no warranty, per the license text.
 
 **Dependency license audit:** every dependency declared in `pyproject.toml`
 (core + `azure`, `vulnerability-generation` and `dev` extras - 58 packages
 including transitive ones) was checked with `pip-licenses` in a clean
-virtual environment. All are MIT, BSD, Apache-2.0, MPL-2.0, or PSF-licensed;
-**none carry a GPL, LGPL, or AGPL license**, so there is no copyleft
-obligation in conflict with this package's MIT license. Re-run with:
+virtual environment. All are MIT, BSD, Apache-2.0, MPL-2.0, or PSF-licensed
+- permissive licenses that a GPLv3+ program can freely depend on, since
+none of them impose a copyleft obligation of their own. **None carry a
+GPL, LGPL, or AGPL license.** Re-run with:
 ```bash
 pip install pip-licenses
 pip-licenses --format=markdown --order=license
