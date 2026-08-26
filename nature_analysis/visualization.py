@@ -186,17 +186,20 @@ def plot_loss_heatmap_by_dimension(results_df: pd.DataFrame,
         value_col = 'Perc_LOSS'
         unit = '%'
         cmap = 'Reds_r'
-        annotation_fmt = lambda x: f"{x * 100:.2f}%" if pd.notnull(x) else ""
+        def annotation_fmt(x):
+            return f"{x * 100:.2f}%" if pd.notnull(x) else ""
     elif value_type == 'absolute_eur':
         value_col = 'delta_indout'
         unit = 'eur'
         cmap = 'Reds_r'
-        annotation_fmt = lambda x: f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
+        def annotation_fmt(x):
+            return f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
     else:  # raw industrial production
         value_col = 'indout'
         unit = 'eur'
         cmap = 'Blues'
-        annotation_fmt = lambda x: f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
+        def annotation_fmt(x):
+            return f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
     
     # Pivot and sort
     pivot_data = agg.pivot(index=dimension_x, columns=dimension_y, values=value_col)
@@ -263,17 +266,20 @@ def plot_loss_heatmap_by_region(results_df: pd.DataFrame,
         value_col = 'Perc_LOSS'
         unit = '%'
         cmap = 'Reds_r'
-        annotation_fmt = lambda x: f"{x * 100:.2f}%" if pd.notnull(x) else ""
+        def annotation_fmt(x):
+            return f"{x * 100:.2f}%" if pd.notnull(x) else ""
     elif value_type == 'absolute_eur':
         value_col = 'delta_indout'
         unit = 'eur'
         cmap = 'Reds_r'
-        annotation_fmt = lambda x: f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
+        def annotation_fmt(x):
+            return f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
     else:  # raw industrial production
         value_col = 'indout'
         unit = 'eur'
         cmap = 'Blues'
-        annotation_fmt = lambda x: f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
+        def annotation_fmt(x):
+            return f"{x / 1_000_000_000:.2f}b" if pd.notnull(x) else ""
     
     # Pivot and sort
     pivot_data = agg.pivot(index=dimension_x, columns='region', values=value_col)
@@ -365,17 +371,20 @@ def plot_portfolio_loss_heatmap(results_df: pd.DataFrame,
         value_col = 'Perc_LOSS'
         unit = '%'
         cmap = 'Reds_r'
-        annotation_fmt = lambda x: f"{x * 100:.2f}%" if pd.notnull(x) else ""
+        def annotation_fmt(x):
+            return f"{x * 100:.2f}%" if pd.notnull(x) else ""
     elif value_type == 'absolute_eur':
         value_col = 'VALUE_LOSS'
         unit = 'eur'
         cmap = 'Reds_r'
-        annotation_fmt = lambda x: f"{x / 1_000_000:.2f}m" if pd.notnull(x) else ""
+        def annotation_fmt(x):
+            return f"{x / 1_000_000:.2f}m" if pd.notnull(x) else ""
     else:  # 'obs_value': original portfolio value
         value_col = 'OBS_VALUE'
         unit = 'eur'
         cmap = 'Blues'
-        annotation_fmt = lambda x: f"{x / 1_000_000:.2f}m" if pd.notnull(x) else ""
+        def annotation_fmt(x):
+            return f"{x / 1_000_000:.2f}m" if pd.notnull(x) else ""
 
     pivot_data = agg.pivot(index=dimension_x, columns=dimension_y, values=value_col)
     pivot_data = pivot_data.sort_values(by=pivot_data.columns[0], ascending=True)

@@ -1,6 +1,6 @@
-# Guide for AI Assistants
+# Developer Guide
 
-> **Context-specific guidance for Claude and other AI assistants working on the Nature-Based Financial Risk Analysis package**
+> **Context-specific guidance for contributors working on the Nature-Based Financial Risk Analysis package**
 
 ---
 
@@ -1081,8 +1081,12 @@ python tests/test_import.py
 # Unit tests (financial formulas, vulnerability helpers)
 python tests/test_suite.py
 
-# pytest suite for vulnerability generation (mocked data)
-python -m pytest tests/test_vulnerability_generator.py -v
+# pytest suites for vulnerability generation and visualization (mocked data)
+python -m pytest tests/test_vulnerability_generator.py tests/test_visualization.py -v
+
+# Lint + coverage (same checks as CI, see .github/workflows/tests.yml)
+python -m ruff check nature_analysis/
+python -m pytest --cov=nature_analysis --cov-report=term-missing tests/
 
 # Check package structure
 python -c "import nature_analysis; print(dir(nature_analysis))"
@@ -1121,5 +1125,5 @@ If you encounter:
 ---
 
 **Last Updated**: 2025-11-18
-**For**: Claude and other AI assistants
+**For**: Contributors and maintainers
 **Version**: 2.0.0

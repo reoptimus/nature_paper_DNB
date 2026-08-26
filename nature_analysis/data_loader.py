@@ -1,11 +1,16 @@
 """
 Data loading and preprocessing functions
 """
+import os
+from enum import Enum
+from io import BytesIO
 import pandas as pd
-import numpy as np
 from pathlib import Path
-from typing import Tuple, List
-from . import config 
+from typing import Tuple, List, TYPE_CHECKING
+from . import config
+
+if TYPE_CHECKING:
+    from azure.storage.filedatalake import DataLakeServiceClient
 
 def load_SHS_data(file_path: str = config.SHS_INSTRUMENT_FILE) -> pd.DataFrame:
     """Load SHS instrument data with proper dtype specification."""
@@ -322,31 +327,8 @@ def load_S2_ARS_data_SCR(file_path: str = config.S2_ARS_FILE_SCR ) -> pd.DataFra
     # Filter for last volgnummer per reporting entity
     ARS_extract = ARS_extract[ARS_extract['rapportageID'].isin(list_report['rapportageID'])]
 
-    # SCR net info is C0030 code
-    # Define the data for rows code and names
-    scr_table = pd.DataFrame({
-        "SCR Category": [
-            "Market risk",
-            "Counterparty default risk",
-            "Life underwriting risk",
-            "Health underwriting risk",
-            "Non-life underwriting risk",
-            "Diversification",
-            "Intangible asset risk",
-            "Basic Solvency Capital Requirement"
-        ],
-        "Code": [
-            "R0010",
-            "R0020",
-            "R0030",
-            "R0040",
-            "R0050",
-            "R0060",
-            "R0070",
-            "R0100"
-        ]
-    })
- 
+    # SCR net info is C0030 code (R0010 = Basic SCR before diversification,
+    # R0100 = Basic Solvency Capital Requirement - see EIOPA S.25.01 template)
     # filter ARS_extract
     keep_list = ['relatienummer', 'R0010C0030', 'R0100C0030']
     ARS_extract = ARS_extract[keep_list]
@@ -485,12 +467,6 @@ def aggregate_shs_losses(input_path, output_path):
 #||                                    #||
 ##########################################
 """
-
-import os
-from enum import Enum
-from io import BytesIO
-from pathlib import Path
-from typing import Optional
 
 # NOTE: the azure-* packages are only required to load confidential DNB data
 # (SHS, AnaCredit, COREP, ARS Solvency 2) directly from Azure Data Lake. They
