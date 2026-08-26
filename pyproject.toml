@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nature-analysis"
+version = "2.0.0"
+description = "Quantify how ecosystem service disruptions impact financial portfolios"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [{ name = "Nature Analysis Team" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Scientific/Engineering",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "pandas>=1.3.0",
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+    "matplotlib>=3.4.0",
+    "seaborn>=0.11.0",
+    "joblib>=1.0.0",
+    "openpyxl>=3.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/reoptimus/nature_paper_DNB"
+
+[project.scripts]
+nature-analysis = "nature_analysis.pipeline:main"
+
+[project.optional-dependencies]
+# Only needed to load confidential SHS/AnaCredit/COREP/ARS data from Azure
+# (DNB-internal use) - see data_loader.py's lazy azure imports.
+azure = ["azure-identity", "azure-storage-file-datalake", "azure-core"]
+# Only needed for the vulnerability-regeneration workflow (PCA clustering
+# in vulnerability_generator.perform_pca_clustering()).
+vulnerability-generation = ["scikit-learn", "tqdm"]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=2.0",
+    "ruff",
+    "bandit",
+    "mypy>=0.900",
+]
+
+[tool.setuptools.packages.find]
+include = ["nature_analysis*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+exclude = ["legacy"]
+
+[tool.ruff.lint]
+# Pinned explicitly (pyflakes + a safe subset of pycodestyle errors) rather
+# than relying on ruff's "default" selection, which has changed between
+# versions. This repo predates any line-length/whitespace/import-sorting
+# convention, and reformatting it wholesale (isort, pyupgrade, pylint-style
+# rules, etc.) is out of scope here. This set still catches real bugs:
+# unused/undefined names, ambiguous variable names, lambda-assignments, etc.
+select = ["E4", "E7", "E9", "F"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["nature_analysis"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]

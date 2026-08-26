@@ -51,7 +51,7 @@ This system quantifies how disruptions to **ecosystem services** (e.g., water re
 
 - 🎯 **Dual data source support**: Separate pipelines for SHS (securities holdings) and AnaCredit (bank lending)
 - 📁 **Professional structure**: Organized into `nature_analysis/`, `tests/`, `examples/`, `legacy/`
-- 📦 **Easy installation**: Proper `setup.py` with pip install support
+- 📦 **Easy installation**: Standard `pyproject.toml` with pip install support
 - 📚 **Better documentation**: Clear input/output specifications and examples for both data sources
 - 🔧 **Cleaner API**: Dedicated pipeline classes (`SHSAnalysisPipeline`, `AnaCreditAnalysisPipeline`)
 - 🗂️ **Explicit data loaders**: Separate functions for SHS vs AnaCredit data
@@ -86,6 +86,11 @@ pip install -e .
 
 # Or install normally
 pip install .
+
+# With optional extras (see pyproject.toml [project.optional-dependencies]):
+pip install -e ".[dev]"                      # ruff, bandit, mypy, pytest-cov
+pip install -e ".[vulnerability-generation]"  # scikit-learn, tqdm
+pip install -e ".[azure]"                     # DNB-internal only
 ```
 
 ### Install Dependencies Only
@@ -276,10 +281,12 @@ print(f"✓ Final results: {results.shape}")
 ```
 nature_paper_DNB/
 ├── README.md                   # This file
-├── setup.py                    # Package installation script
-├── requirements.txt            # Dependencies
+├── pyproject.toml              # Package metadata, dependencies, tool config (ruff/pytest/coverage)
+├── requirements.txt            # Dependencies (pip install -r requirements.txt)
+├── LICENSE                     # MIT
 ├── .gitignore                  # Git ignore rules
 ├── CLAUDE.md                   # Guide for AI assistants
+├── .github/workflows/tests.yml # CI: lint + tests + coverage, no DNB access needed
 │
 ├── nature_analysis/            # Main package ⭐
 │   ├── __init__.py            # Package initialization & exports
@@ -295,6 +302,7 @@ nature_paper_DNB/
 │   ├── test_suite.py                    # Unit tests + optional output-diff tool
 │   ├── test_import.py                   # Import / API surface validation
 │   ├── test_vulnerability_generator.py  # pytest suite (mocked data, no DNB access needed)
+│   ├── test_visualization.py            # pytest suite for visualization.py (mocked data)
 │   └── quick_compare.py                 # Manual before/after CSV comparison (not auto-run)
 │
 ├── examples/                   # Usage examples
@@ -1080,6 +1088,8 @@ These checks require no confidential data and no Azure credentials - they
 work right after `pip install -e .` on any machine:
 
 ```bash
+pip install -e ".[dev,vulnerability-generation]"
+
 # 1. Import + public API surface check
 python tests/test_import.py
 
@@ -1091,8 +1101,12 @@ python tests/test_import.py
 python tests/test_suite.py
 
 # 3. pytest suite for the vulnerability-generation module (uses mocked data)
-pip install pytest  # if not already installed
-python -m pytest tests/test_vulnerability_generator.py -v
+# and 4. pytest suite for visualization.py (heatmaps, summary stats)
+python -m pytest tests/test_vulnerability_generator.py tests/test_visualization.py -v
+
+# Lint + coverage (same checks as CI, see .github/workflows/tests.yml)
+python -m ruff check nature_analysis/
+python -m pytest --cov=nature_analysis --cov-report=term-missing tests/
 ```
 
 ### What requires DNB Azure access
@@ -1151,8 +1165,8 @@ The underlying calculation logic is identical, but the data and final aggregatio
 
 [MIT License](LICENSE) - see the `LICENSE` file. The copyright holder
 listed there (`Nature Analysis Team`) is a placeholder matching
-`setup.py`'s `author` field; update it to the appropriate legal entity
-before distributing the package externally.
+`pyproject.toml`'s `authors` field; update it to the appropriate legal
+entity before distributing the package externally.
 
 ---
 

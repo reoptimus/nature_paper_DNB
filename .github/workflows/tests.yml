@@ -1,6 +1,6 @@
 name: Tests
 
-# These tests need no DNB Azure access and no confidential data - they run
+# These checks need no DNB Azure access and no confidential data - they run
 # entirely on the reference/vulnerability data and synthetic demo dataset
 # shipped in this repo (see README.md "What can run without DNB access").
 on:
@@ -21,18 +21,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install core + vulnerability-generation dependencies
-        # Deliberately NOT installing azure-identity/azure-storage-file-datalake/
-        # azure-core here: this proves the package imports and runs its
-        # non-confidential functionality without them (see data_loader.py's
-        # lazy azure imports).
-        run: pip install pandas numpy scipy matplotlib seaborn joblib openpyxl scikit-learn pytest
+      - name: Install package + dev/vulnerability-generation dependencies
+        # Deliberately NOT installing the "azure" extra here: this proves the
+        # package imports and runs its non-confidential functionality
+        # without the azure SDK (see data_loader.py's lazy azure imports).
+        run: pip install -e ".[dev,vulnerability-generation]"
 
-      - name: Import + public API surface check
-        run: python tests/test_import.py
+      - name: Lint (ruff)
+        run: python -m ruff check nature_analysis/
 
-      - name: Unit tests + demo pipeline end-to-end
-        run: python tests/test_suite.py
-
-      - name: Vulnerability-generator tests (pytest, mocked data)
-        run: python -m pytest tests/test_vulnerability_generator.py -v
+      - name: Tests + coverage
+        # Runs test_import.py, test_suite.py (incl. the demo pipeline
+        # end-to-end), test_visualization.py and test_vulnerability_generator.py.
+        # Invoked as `python -m pytest` (not bare `pytest`) to avoid picking
+        # up an unrelated pytest install earlier on PATH.
+        run: python -m pytest --cov=nature_analysis --cov-report=term-missing --cov-fail-under=45 tests/

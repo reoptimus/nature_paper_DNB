@@ -1081,8 +1081,12 @@ python tests/test_import.py
 # Unit tests (financial formulas, vulnerability helpers)
 python tests/test_suite.py
 
-# pytest suite for vulnerability generation (mocked data)
-python -m pytest tests/test_vulnerability_generator.py -v
+# pytest suites for vulnerability generation and visualization (mocked data)
+python -m pytest tests/test_vulnerability_generator.py tests/test_visualization.py -v
+
+# Lint + coverage (same checks as CI, see .github/workflows/tests.yml)
+python -m ruff check nature_analysis/
+python -m pytest --cov=nature_analysis --cov-report=term-missing tests/
 
 # Check package structure
 python -c "import nature_analysis; print(dir(nature_analysis))"
