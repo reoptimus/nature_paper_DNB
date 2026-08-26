@@ -285,7 +285,7 @@ nature_paper_DNB/
 ├── requirements.txt            # Dependencies (pip install -r requirements.txt)
 ├── LICENSE                     # MIT
 ├── .gitignore                  # Git ignore rules
-├── CLAUDE.md                   # Guide for AI assistants
+├── DEVELOPER_GUIDE.md           # Developer guide (architecture, common tasks, pitfalls)
 ├── .github/workflows/tests.yml # CI: lint + tests + coverage, no DNB access needed
 │
 ├── nature_analysis/            # Main package ⭐
@@ -855,7 +855,7 @@ shapes = vulnerability_generator.run_full_vulnerability_generation(
 )
 ```
 
-See [`CLAUDE.md`](CLAUDE.md#vulnerability-data-generation-optional-workflow) for detailed documentation on the vulnerability generation workflow.
+See [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md#vulnerability-data-generation-optional-workflow) for detailed documentation on the vulnerability generation workflow.
 
 ---
 
@@ -1167,6 +1167,17 @@ The underlying calculation logic is identical, but the data and final aggregatio
 listed there (`Nature Analysis Team`) is a placeholder matching
 `pyproject.toml`'s `authors` field; update it to the appropriate legal
 entity before distributing the package externally.
+
+**Dependency license audit:** every dependency declared in `pyproject.toml`
+(core + `azure`, `vulnerability-generation` and `dev` extras - 58 packages
+including transitive ones) was checked with `pip-licenses` in a clean
+virtual environment. All are MIT, BSD, Apache-2.0, MPL-2.0, or PSF-licensed;
+**none carry a GPL, LGPL, or AGPL license**, so there is no copyleft
+obligation in conflict with this package's MIT license. Re-run with:
+```bash
+pip install pip-licenses
+pip-licenses --format=markdown --order=license
+```
 
 ---
 

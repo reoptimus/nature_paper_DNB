@@ -1,6 +1,6 @@
-# Guide for AI Assistants
+# Developer Guide
 
-> **Context-specific guidance for Claude and other AI assistants working on the Nature-Based Financial Risk Analysis package**
+> **Context-specific guidance for contributors working on the Nature-Based Financial Risk Analysis package**
 
 ---
 
@@ -1125,5 +1125,5 @@ If you encounter:
 ---
 
 **Last Updated**: 2025-11-18
-**For**: Claude and other AI assistants
+**For**: Contributors and maintainers
 **Version**: 2.0.0
